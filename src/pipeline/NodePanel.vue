@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Picture, Document, EditPen, Search, VideoCamera } from "@element-plus/icons-vue";
+import {
+  Picture,
+  Document,
+  EditPen,
+  Search,
+  VideoCamera,
+  FolderOpened,
+} from "@element-plus/icons-vue";
 import type { Component } from "vue";
 import { groupedNodeTypes } from "../composables/usePipeline";
 
@@ -16,6 +23,7 @@ const iconMap: Record<string, Component> = {
   EditPen,
   Search,
   VideoCamera,
+  FolderOpened,
 };
 
 function onDragStart(nodeTypeId: string, event: DragEvent) {

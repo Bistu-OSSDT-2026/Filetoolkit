@@ -9,15 +9,18 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Upload, Download, Check, RefreshLeft } from "@element-plus/icons-vue";
+import { Delete, Upload, Download, Check, RefreshLeft, Files } from "@element-plus/icons-vue";
 import NodePanel from "./NodePanel.vue";
 import NodeParamForm from "./NodeParamForm.vue";
+import TemplateManager from "./TemplateManager.vue";
 import { PipelineState } from "../composables/usePipeline";
+import type { Pipeline } from "../pipeline/types";
 
 const { nodes, edges, onConnect, onNodeClick, onPaneClick, screenToFlowCoordinate } = useVueFlow();
 
 const pipeline = new PipelineState(nodes, edges);
 const showValidationErrors = ref(false);
+const showTemplateDialog = ref(false);
 
 function onDragOver(event: DragEvent) {
   event.preventDefault();
@@ -98,6 +101,10 @@ function handleImport() {
   };
   input.click();
 }
+function handleLoadTemplate(p: Pipeline) {
+  pipeline.fromPipelineJSON(p);
+  showTemplateDialog.value = false;
+}
 function onKeydown(e: KeyboardEvent) {
   if (
     (e.key === "Delete" || e.key === "Backspace") &&
@@ -136,6 +143,9 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
           </el-button>
           <el-button size="small" type="primary" @click="handleValidate">
             <el-icon><Check /></el-icon>校验
+          </el-button>
+          <el-button size="small" @click="showTemplateDialog = true">
+            <el-icon><Files /></el-icon>模板
           </el-button>
           <el-button size="small" text @click="handleClear">
             <el-icon><RefreshLeft /></el-icon>清空
@@ -182,6 +192,18 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
         "
       />
     </aside>
+
+    <!-- 模板管理弹窗 -->
+    <el-dialog v-model="showTemplateDialog" title="模板管理" width="520px" destroy-on-close>
+      <TemplateManager
+        :current-pipeline="pipeline.toPipelineJSON()"
+        @load="handleLoadTemplate"
+        @import-json="
+          showTemplateDialog = false;
+          handleImport();
+        "
+      />
+    </el-dialog>
   </div>
 </template>
 

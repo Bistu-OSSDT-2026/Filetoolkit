@@ -1,0 +1,23 @@
+{
+  "name": "合同 PDF 标准化",
+  "description": "PDF 合并 → 压缩 → 加密",
+  "nodes": [
+    {
+      "id": "node-1",
+      "nodeType": "pdf_merge",
+      "label": "PDF 合并",
+      "position": { "x": 100, "y": 200 },
+      "params": {
+        "outputName": "contract-merged.pdf"
+      }
+    },
+    {
+      "id": "node-2",
+      "nodeType": "pdf_compress",
+      "label": "PDF 压缩",
+      "position": { "x": 400, "y": 200 },
+      "params": {}
+    }
+  ],
+  "edges": [{ "id": "edge-1", "source": "node-1", "target": "node-2" }]
+}

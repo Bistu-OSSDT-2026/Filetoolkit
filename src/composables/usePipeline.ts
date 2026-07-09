@@ -124,6 +124,34 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
     ],
   },
   {
+    id: "file_archive",
+    name: "文件打包",
+    category: "文件",
+    description: "将文件打包为 zip/7z/tar.gz",
+    icon: "FolderOpened",
+    inputs: [{ id: "input", label: "文件/目录", portType: "file[]" }],
+    outputs: [{ id: "output", label: "压缩包", portType: "file" }],
+    params: [
+      {
+        key: "format",
+        label: "压缩格式",
+        paramType: "select",
+        default: "zip",
+        options: [
+          { value: "zip", label: "ZIP" },
+          { value: "7z", label: "7Z" },
+          { value: "tar.gz", label: "TAR.GZ" },
+        ],
+      },
+      {
+        key: "archiveName",
+        label: "压缩包名称",
+        paramType: "string",
+        default: "archive",
+      },
+    ],
+  },
+  {
     id: "video_transcode",
     name: "视频转码",
     category: "视频",

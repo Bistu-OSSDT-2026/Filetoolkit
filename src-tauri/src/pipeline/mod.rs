@@ -7,3 +7,4 @@
 //   preview.rs  —— Dry-run 预览(A-8,待实现)
 
 pub mod model;
+pub mod registry;

@@ -20,6 +20,8 @@ pub fn run() {
             common::dependency::check_dependency,
             common::dependency::check_all_dependencies,
             common::dependency::clear_dependency_cache,
+            pipeline::registry::get_node_types,
+            pipeline::registry::get_node_types_grouped,
             worker::cancel_batch,
         ])
         .run(tauri::generate_context!())

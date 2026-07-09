@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
 import type { Node, Edge, Connection } from "@vue-flow/core";
 import type { Pipeline, NodeType, ParamDef } from "../pipeline/types";
 
@@ -229,28 +229,40 @@ export function findNodeType(id: string): NodeType | undefined {
 
 /**
  * 流水线画布状态管理。
- * 接收 Vue Flow 的 nodes/edges refs，避免重复创建导致类型冲突。
+ * 
+ * **重要**: flowNodes / flowEdges 是 PipelineState 自己管理的 ref，
+ * **不与** useVueFlow() 返回的 refs 共享引用。
+ * 组件层通过单向绑定（:nodes / :edges）将数据传给 VueFlow，
+ * 通过 @update:nodes / @update:edges 将 VueFlow 的用户交互同步回来。
+ * 这彻底避免了 v-model 双向绑定导致的递归更新死循环。
  */
 export class PipelineState {
+  /** 画布节点 —— 通过 :nodes 单向传给 VueFlow */
+  flowNodes = ref<Node[]>([]);
+  /** 画布连线 —— 通过 :edges 单向传给 VueFlow */
+  flowEdges = ref<Edge[]>([]);
+
   pipelineName = ref("未命名流水线");
   pipelineDescription = ref("");
   selectedNodeId = ref<string | null>(null);
   validationErrors = ref<string[]>([]);
 
-  private nodesRef: Ref<Node[]>;
-  private edgesRef: Ref<Edge[]>;
-
-  constructor(nodesRef: Ref<Node[]>, edgesRef: Ref<Edge[]>) {
-    this.nodesRef = nodesRef;
-    this.edgesRef = edgesRef;
-  }
-
   get nodes(): Node[] {
-    return this.nodesRef.value;
+    return this.flowNodes.value;
   }
 
   get edges(): Edge[] {
-    return this.edgesRef.value;
+    return this.flowEdges.value;
+  }
+
+  /** VueFlow 用户拖拽节点后，通过 @update:nodes 回调进来 */
+  acceptFlowNodes(val: Node[]) {
+    this.flowNodes.value = val;
+  }
+
+  /** VueFlow 用户修改连线后，通过 @update:edges 回调进来 */
+  acceptFlowEdges(val: Edge[]) {
+    this.flowEdges.value = val;
   }
 
   getSelectedNode(): Node | null {
@@ -275,28 +287,31 @@ export class PipelineState {
     const nt = findNodeType(nodeTypeId);
     if (!nt) return;
     const id = `node-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    this.nodesRef.value.push({
-      id,
-      type: nodeTypeId,
-      position,
-      label: nt.name,
-      data: { nodeType: nodeTypeId, label: nt.name, params: buildDefaultParams(nt.params ?? []) },
-    });
+    this.flowNodes.value = [
+      ...this.flowNodes.value,
+      {
+        id,
+        type: nodeTypeId,
+        position,
+        label: nt.name,
+        data: { nodeType: nodeTypeId, label: nt.name, params: buildDefaultParams(nt.params ?? []) },
+      },
+    ];
     this.selectedNodeId.value = id;
   }
 
   removeNode(nodeId: string) {
-    this.nodesRef.value = this.nodesRef.value.filter((n) => n.id !== nodeId);
-    this.edgesRef.value = this.edgesRef.value.filter(
+    this.flowNodes.value = this.flowNodes.value.filter((n) => n.id !== nodeId);
+    this.flowEdges.value = this.flowEdges.value.filter(
       (e) => e.source !== nodeId && e.target !== nodeId,
     );
     if (this.selectedNodeId.value === nodeId) this.selectedNodeId.value = null;
   }
 
   updateNodeParam(nodeId: string, key: string, value: unknown) {
-    const node = this.nodesRef.value.find((n) => n.id === nodeId);
+    const node = this.flowNodes.value.find((n) => n.id === nodeId);
     if (node?.data) {
-      node.data = { ...node.data, params: { ...node.data.params, [key]: value } };
+      node.data.params = { ...node.data.params, [key]: value };
     }
   }
 
@@ -305,17 +320,20 @@ export class PipelineState {
   addEdge(connection: Connection) {
     if (!connection.source || !connection.target) return;
     const id = `edge-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    this.edgesRef.value.push({
-      id,
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle ?? undefined,
-      targetHandle: connection.targetHandle ?? undefined,
-    });
+    this.flowEdges.value = [
+      ...this.flowEdges.value,
+      {
+        id,
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle ?? undefined,
+        targetHandle: connection.targetHandle ?? undefined,
+      },
+    ];
   }
 
   removeEdge(edgeId: string) {
-    this.edgesRef.value = this.edgesRef.value.filter((e) => e.id !== edgeId);
+    this.flowEdges.value = this.flowEdges.value.filter((e) => e.id !== edgeId);
   }
 
   // ========== 校验 ==========
@@ -397,14 +415,22 @@ export class PipelineState {
   fromPipelineJSON(pipeline: Pipeline) {
     this.pipelineName.value = pipeline.name;
     this.pipelineDescription.value = pipeline.description ?? "";
-    this.nodesRef.value = pipeline.nodes.map((n) => ({
-      id: n.id,
-      type: n.nodeType,
-      position: n.position,
-      label: n.label,
-      data: { nodeType: n.nodeType, label: n.label, params: n.params ?? {} },
-    }));
-    this.edgesRef.value = pipeline.edges.map((e) => ({
+    this.flowNodes.value = pipeline.nodes.map((n) => {
+      const nt = findNodeType(n.nodeType);
+      const defaultParams = nt ? buildDefaultParams(nt.params ?? []) : {};
+      return {
+        id: n.id,
+        type: n.nodeType,
+        position: n.position,
+        label: n.label,
+        data: {
+          nodeType: n.nodeType,
+          label: n.label,
+          params: { ...defaultParams, ...(n.params ?? {}) },
+        },
+      };
+    });
+    this.flowEdges.value = pipeline.edges.map((e) => ({
       id: e.id,
       source: e.source,
       target: e.target,
@@ -414,8 +440,8 @@ export class PipelineState {
   }
 
   clearCanvas() {
-    this.nodesRef.value = [];
-    this.edgesRef.value = [];
+    this.flowNodes.value = [];
+    this.flowEdges.value = [];
     this.selectedNodeId.value = null;
     this.validationErrors.value = [];
     this.pipelineName.value = "未命名流水线";

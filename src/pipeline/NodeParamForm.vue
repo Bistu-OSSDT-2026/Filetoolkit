@@ -72,7 +72,7 @@ function setValue(key: string, value: unknown) {
         <!-- number -->
         <el-input-number
           v-else-if="getParamType(p) === 'number'"
-          :model-value="Number(getValue(p.key) ?? undefined)"
+          :model-value="getValue(p.key) != null ? Number(getValue(p.key)) : undefined"
           :placeholder="String(p.default ?? '')"
           controls-position="right"
           @update:model-value="setValue(p.key, $event)"
@@ -102,7 +102,13 @@ function setValue(key: string, value: unknown) {
         <!-- slider -->
         <template v-else-if="getSliderConfig(p)">
           <el-slider
-            :model-value="Number(getValue(p.key) ?? p.default ?? 0)"
+            :model-value="
+              getValue(p.key) != null
+                ? Number(getValue(p.key))
+                : p.default != null
+                  ? Number(p.default)
+                  : 0
+            "
             :min="getSliderConfig(p)!.min"
             :max="getSliderConfig(p)!.max"
             :step="getSliderConfig(p)!.step"

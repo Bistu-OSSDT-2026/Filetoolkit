@@ -12,6 +12,8 @@ import { groupedNodeTypes } from "../composables/usePipeline";
 
 const emit = defineEmits<{
   (e: "drag-start", nodeTypeId: string, event: DragEvent): void;
+  /** 点击节点类型时触发（Tauri WebView2 拖放不可用时的备选方案） */
+  (e: "add-node", nodeTypeId: string): void;
 }>();
 
 const groups = groupedNodeTypes();
@@ -29,10 +31,26 @@ const iconMap: Record<string, Component> = {
 function onDragStart(nodeTypeId: string, event: DragEvent) {
   if (event.dataTransfer) {
     event.dataTransfer.setData("application/vueflow-node-type", nodeTypeId);
+    event.dataTransfer.setData("text/plain", nodeTypeId);
     event.dataTransfer.effectAllowed = "move";
   }
+  // 标记拖拽进行中，阻止 click 误触发 add-node
+  isDragging = true;
   emit("drag-start", nodeTypeId, event);
 }
+
+/** 点击添加节点（Tauri WebView2 拖放不支持时的备选方案） */
+function onClickAdd(nodeTypeId: string) {
+  // 如果正在拖拽（dragstart 刚触发），忽略 click
+  if (isDragging) {
+    isDragging = false;
+    return;
+  }
+  emit("add-node", nodeTypeId);
+}
+
+/** 拖拽进行中标记 — click 和 dragstart 都会在 mousedown 时触发，用此标记区分 */
+let isDragging = false;
 </script>
 
 <template>
@@ -47,7 +65,9 @@ function onDragStart(nodeTypeId: string, event: DragEvent) {
         :key="nt.id"
         class="node-item"
         draggable="true"
+        title="拖拽到画布或点击添加"
         @dragstart="onDragStart(nt.id, $event)"
+        @click="onClickAdd(nt.id)"
       >
         <el-icon :size="18">
           <component :is="iconMap[nt.icon ?? ''] ?? Document" />

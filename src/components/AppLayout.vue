@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { setLocale, availableLocales } from "../i18n";
+import { useTheme, themeOptions } from "../composables/useTheme";
 import {
   House,
   Picture,
@@ -9,6 +12,8 @@ import {
   Search,
   Connection,
   FolderOpened,
+  VideoCamera,
+  Headset,
   Fold,
   Expand,
 } from "@element-plus/icons-vue";
@@ -34,20 +39,24 @@ function saveSidebarState(collapsed: boolean) {
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
+const { themeMode, setTheme } = useTheme();
 const isCollapsed = ref(loadSidebarState());
 
-const navItems = [
-  { path: "/", label: "首页", icon: House },
-  { path: "/image", label: "图片处理", icon: Picture },
-  { path: "/pdf", label: "PDF 工具", icon: Document },
-  { path: "/rename", label: "批量重命名", icon: EditPen },
-  { path: "/dedup", label: "重复查重", icon: Search },
-];
+const navItems = computed(() => [
+  { path: "/", label: t("nav.home"), icon: House },
+  { path: "/image", label: t("nav.image"), icon: Picture },
+  { path: "/pdf", label: t("nav.pdf"), icon: Document },
+  { path: "/rename", label: t("nav.rename"), icon: EditPen },
+  { path: "/dedup", label: t("nav.dedup"), icon: Search },
+]);
 
-const advancedItems = [
-  { path: "/pipeline", label: "流水线", icon: Connection },
-  { path: "/disk-usage", label: "磁盘可视化", icon: FolderOpened },
-];
+const advancedItems = computed(() => [
+  { path: "/video", label: t("nav.video"), icon: VideoCamera },
+  { path: "/audio", label: t("nav.audio"), icon: Headset },
+  { path: "/pipeline", label: t("nav.pipeline"), icon: Connection },
+  { path: "/disk-usage", label: t("nav.diskUsage"), icon: FolderOpened },
+]);
 
 function handleSelect(path: string) {
   router.push(path);
@@ -105,9 +114,27 @@ function toggleSidebar() {
         <el-icon class="collapse-btn" :size="20" @click="toggleSidebar">
           <component :is="isCollapsed ? Expand : Fold" />
         </el-icon>
+        <div class="header-right">
+          <el-select
+            :model-value="themeMode"
+            size="small"
+            style="width: 100px"
+            @change="(v) => setTheme(v)"
+          >
+            <el-option v-for="o in themeOptions" :key="o.value" :label="o.label" :value="o.value" />
+          </el-select>
+          <el-select
+            :model-value="$i18n.locale"
+            size="small"
+            style="width: 100px"
+            @change="(v: string) => setLocale(v)"
+          >
+            <el-option v-for="loc in availableLocales" :key="loc.value" :label="loc.label" :value="loc.value" />
+          </el-select>
+        </div>
       </el-header>
       <el-main class="app-main">
-        <router-view />
+        <router-view :key="route.path" />
       </el-main>
     </el-container>
   </el-container>
@@ -160,8 +187,22 @@ function toggleSidebar() {
   color: var(--el-color-primary);
 }
 
+.header-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .app-main {
+  flex: 1;
+  min-height: 0;
+  /* flex column 布局：让子元素可以通过 flex:1 撑满高度 */
+  /* 同时 overflow-y:auto 让普通页面内容过长时正常滚动 */
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
+  padding: 0 !important; /* 覆盖 Element Plus el-main 默认 20px padding */
   background-color: var(--el-bg-color-page);
 }
 </style>

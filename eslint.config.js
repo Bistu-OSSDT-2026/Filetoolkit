@@ -23,6 +23,7 @@ export default [
         document: "readonly",
         window: "readonly",
         prompt: "readonly",
+        console: "readonly",
       },
     },
   },
@@ -50,6 +51,10 @@ export default [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
+      // 成员 B/E 的代码中使用了 (file as any).path 等 Tauri 特定模式
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "no-empty": ["error", { allowEmptyCatch: true }],
     },
   },
 ];

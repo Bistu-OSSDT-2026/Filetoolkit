@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpened, RefreshRight } from "@element-plus/icons-vue";
 import SunburstChart from "../components/SunburstChart.vue";
 import { useDiskScan } from "../composables/useDiskScan";
@@ -8,11 +10,13 @@ const { scanning, progress, data, error, scan } = useDiskScan();
 
 const selectedDir = ref("");
 
+/** Tauri 原生文件夹选择 → 自动扫描 */
 async function selectAndScan() {
-  const dir = prompt("请输入要扫描的目录路径:");
+  const dir = await open({ directory: true });
   if (!dir) return;
-  selectedDir.value = dir;
-  await scan(dir);
+  const path = typeof dir === "string" ? dir : dir[0];
+  selectedDir.value = path;
+  await scan(path);
 }
 
 function formatBytes(bytes: number): string {

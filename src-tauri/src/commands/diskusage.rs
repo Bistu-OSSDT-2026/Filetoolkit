@@ -1,10 +1,11 @@
 // 磁盘占用可视化命令(D-5)
 //
-// 递归遍历目录,构建 DirNode 树供前端 ECharts 旭日图渲染。
-// 大目录流式遍历并 emit 进度事件。
+// 递归遍历目录，构建 DirNode 树供前端 ECharts 旭日图渲染。
+// 使用 walkdir 流式遍历 + 按条件发送进度事件。
 
+use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
@@ -13,19 +14,14 @@ use tauri::{AppHandle, Emitter};
 // 数据结构
 // ============================================================
 
-/// 目录树节点,前端 ECharts 旭日图的数据源。
+/// 目录树节点，前端 ECharts 旭日图的数据源。
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DirNode {
-    /// 文件/目录名
     pub name: String,
-    /// 完整路径
     pub path: String,
-    /// 自身大小(字节)——文件为文件大小,目录为递归汇总
     pub size: u64,
-    /// 是否为目录
     pub is_dir: bool,
-    /// 子节点(仅目录有)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub children: Option<Vec<DirNode>>,
 }
@@ -34,8 +30,7 @@ pub struct DirNode {
 // Tauri 命令
 // ============================================================
 
-/// 扫描指定目录,返回 DirNode 树。
-/// 大目录(>1000 文件)会边扫描边 emit "disk-scan-progress" 事件。
+/// 扫描指定目录，返回 DirNode 树。
 #[tauri::command]
 pub fn scan_directory(app: AppHandle, dir: String) -> Result<DirNode, String> {
     let root_path = PathBuf::from(&dir);
@@ -52,91 +47,144 @@ pub fn scan_directory(app: AppHandle, dir: String) -> Result<DirNode, String> {
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| dir.clone());
 
-    // 构建树并计算大小
-    build_tree(&root_path, &root_name, &root_path.to_string_lossy(), &app)
+    build_tree_fast(&root_path, &root_name, &root_path.to_string_lossy(), &app)
 }
 
 // ============================================================
-// 内部实现
+// 实现: walkdir 流式遍历 + 按目录层级聚合
 // ============================================================
 
-fn build_tree(
-    path: &std::path::Path,
+/// walkdir 流式遍历目录树，聚合为 DirNode 树。
+fn build_tree_fast(
+    path: &Path,
     name: &str,
     display_path: &str,
     app: &AppHandle,
 ) -> Result<DirNode, String> {
-    let mut node = DirNode {
-        name: name.to_string(),
-        path: display_path.to_string(),
-        size: 0,
-        is_dir: true,
-        children: Some(Vec::new()),
-    };
-
+    let mut entries: Vec<(String, PathBuf, u64, bool)> = Vec::new();
     let mut total_size: u64 = 0;
     let mut file_count: u64 = 0;
+    let batch_size = 500u64;
 
-    let entries: Vec<_> = match fs::read_dir(path) {
-        Ok(iter) => iter.filter_map(|e| e.ok()).collect(),
-        Err(e) => return Err(format!("无法读取目录 {}: {}", display_path, e)),
-    };
+    let iter = walkdir::WalkDir::new(path)
+        .min_depth(1)    // 不包含自身
+        .max_depth(1)    // 只读一层
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok());
 
-    for entry in &entries {
-        let entry_path = entry.path();
+    for entry in iter {
+        let entry_path = entry.path().to_path_buf();
         let entry_name = entry_path
             .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
-        let entry_display = entry_path.to_string_lossy().to_string();
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string();
+        let is_dir = entry_path.is_dir();
 
-        if entry_path.is_dir() {
-            match build_tree(&entry_path, &entry_name, &entry_display, app) {
-                Ok(child) => {
-                    total_size += child.size;
-                    node.children.as_mut().unwrap().push(child);
-                }
-                Err(_) => {
-                    // 无法访问的目录(权限等),作为叶子记录
-                    node.children.as_mut().unwrap().push(DirNode {
-                        name: entry_name,
-                        path: entry_display,
-                        size: 0,
-                        is_dir: true,
-                        children: None,
-                    });
+        let size = if is_dir {
+            // 子目录：递归计算大小
+            let mut sub_size: u64 = 0;
+            let mut sub_files: u64 = 0;
+            for sub in walkdir::WalkDir::new(&entry_path)
+                .follow_links(false)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().is_file())
+            {
+                sub_size += sub.metadata().map(|m| m.len()).unwrap_or(0);
+                sub_files += 1;
+
+                // 流式发送进度
+                if sub_files % batch_size == 0 {
+                    let _ = app.emit(
+                        "disk-scan-progress",
+                        serde_json::json!({
+                            "path": display_path,
+                            "files": sub_files + file_count,
+                            "size": sub_size + total_size,
+                            "message": format!(
+                                "扫描中: {} 文件, {}",
+                                sub_files + file_count,
+                                format_size(sub_size + total_size)
+                            ),
+                        }),
+                    );
                 }
             }
+            sub_size
         } else {
-            let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-            total_size += size;
-            file_count += 1;
-            node.children.as_mut().unwrap().push(DirNode {
-                name: entry_name,
-                path: entry_display,
-                size,
-                is_dir: false,
-                children: None,
-            });
+            entry.metadata().map(|m| m.len()).unwrap_or(0)
+        };
+
+        total_size += size;
+        file_count += if is_dir { 0 } else { 1 };
+        entries.push((entry_name, entry_path, size, is_dir));
+
+        // 流式发送进度
+        if file_count % batch_size == 0 {
+            let _ = app.emit(
+                "disk-scan-progress",
+                serde_json::json!({
+                    "path": display_path,
+                    "files": file_count,
+                    "size": total_size,
+                    "message": format!("扫描中: {} 文件, {}", file_count, format_size(total_size)),
+                }),
+            );
         }
     }
 
-    node.size = total_size;
+    // 构建子节点（限制数量防止图表卡顿）
+    let children = build_children(entries);
 
-    // 大目录发送进度事件
-    if file_count > 500 {
-        let _ = app.emit(
-            "disk-scan-progress",
-            serde_json::json!({
-                "path": display_path,
-                "files": file_count,
-                "size": total_size,
-                "message": format!("已扫描 {} 个文件, 共 {}", file_count, format_size(total_size)),
-            }),
-        );
+    Ok(DirNode {
+        name: name.to_string(),
+        path: display_path.to_string(),
+        size: total_size,
+        is_dir: true,
+        children: Some(children),
+    })
+}
+
+/// 将条目列表转为 DirNode 子节点，大目录合并小文件为 "其他"。
+const MAX_CHILDREN: usize = 200;
+
+fn build_children(mut entries: Vec<(String, PathBuf, u64, bool)>) -> Vec<DirNode> {
+    // 按大小降序排列
+    entries.sort_by(|a, b| b.2.cmp(&a.2));
+
+    let mut children: Vec<DirNode> = Vec::new();
+    let mut others_size: u64 = 0;
+    let mut others_count: u32 = 0;
+
+    for (i, (name, path, size, is_dir)) in entries.into_iter().enumerate() {
+        if i < MAX_CHILDREN {
+            children.push(DirNode {
+                name,
+                path: path.to_string_lossy().to_string(),
+                size,
+                is_dir,
+                children: if is_dir { Some(Vec::new()) } else { None },
+            });
+        } else {
+            // 超出展示上限的归入 "其他"
+            others_size += size;
+            others_count += 1;
+        }
     }
 
-    Ok(node)
+    if others_count > 0 {
+        children.push(DirNode {
+            name: format!("其他 ({} 项)", others_count),
+            path: String::new(),
+            size: others_size,
+            is_dir: false,
+            children: None,
+        });
+    }
+
+    children
 }
 
 /// 格式化文件大小(人类可读)
@@ -158,7 +206,6 @@ pub fn format_size(bytes: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use std::io::Write;
 
     #[test]
@@ -175,11 +222,8 @@ mod tests {
         let mut f = fs::File::create(dir.join("a.txt")).unwrap();
         f.write_all(b"hello").unwrap();
 
-        // 直接测试 build_tree
         let name = dir.file_name().unwrap().to_string_lossy().to_string();
         let disp = dir.to_string_lossy().to_string();
-        // 注意:build_tree 需要 AppHandle,这里只测逻辑
-        // 集成测试在 tauri 环境中运行
         let _ = (name, disp);
         fs::remove_dir_all(&dir).unwrap();
     }

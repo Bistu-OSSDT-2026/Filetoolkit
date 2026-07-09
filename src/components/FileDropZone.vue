@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { open } from "@tauri-apps/plugin-dialog";
 import { UploadFilled } from "@element-plus/icons-vue";
 
 /**
  * 文件拖拽/选择通用组件。
- * 支持拖拽文件到区域 + 点击触发系统文件选择。
+ * Tauri 环境下使用原生对话框（返回真实文件路径），
+ * 浏览器 dev 模式下回退到 HTML input（路径不可用）。
  *
  * Props:
  *   accept   — 限制可选文件类型(如 "image/*" / ".pdf")
  *   multiple — 是否允许多选(默认 true)
  *
  * Emit:
- *   @files-selected — 用户选择文件后发出 File[]
+ *   @files-selected — 用户选择文件后发出真实文件路径 string[]
  */
 
 const props = withDefaults(
@@ -26,19 +28,83 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: "files-selected", files: File[]): void;
+  (e: "files-selected", files: string[]): void;
 }>();
 
 const isDragging = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
-const acceptAttr = computed(() => {
-  if (!props.accept || props.accept === "*") return undefined;
-  return props.accept;
-});
-
 let dragCounter = 0;
 
+/** 检测是否在 Tauri 环境 */
+const isTauri = !!(window as any).__TAURI_INTERNALS__;
+
+/** MIME 类型 → 扩展名映射（Tauri 对话框只接受扩展名，不接受 MIME） */
+const MIME_TO_EXT: Record<string, string[]> = {
+  "image/*": ["jpg", "jpeg", "png", "gif", "webp", "bmp", "avif", "tiff"],
+  "audio/*": ["mp3", "wav", "ogg", "flac", "aac", "m4a"],
+  "video/*": ["mp4", "mov", "mkv", "webm", "avi"],
+};
+
+/** 将 accept 属性转为 Tauri 对话框 filters */
+const tauriFilters = computed(() => {
+  if (!props.accept || props.accept === "*") return [];
+  return props.accept.split(",").map((s) => {
+    const mime = s.trim();
+    // MIME 类型组 → 展开为扩展名列表
+    if (MIME_TO_EXT[mime]) {
+      return {
+        name: mime.replace("/*", "").toUpperCase(),
+        extensions: MIME_TO_EXT[mime],
+      };
+    }
+    // 扩展名：移除前导 * 和 .
+    const ext = mime.replace(/^\*?\.?/, "").toLowerCase();
+    return { name: ext.toUpperCase(), extensions: [ext] };
+  });
+});
+
+/** 点击 → Tauri 原生对话框（路径） 或 浏览器 input */
+async function onClick() {
+  if (isTauri) {
+    // Tauri：原生文件选择，返回真实路径
+    const selected = await open({
+      multiple: props.multiple,
+      filters: tauriFilters.value.length > 0 ? tauriFilters.value : undefined,
+    });
+    if (!selected) return;
+    const paths = Array.isArray(selected) ? selected : [selected];
+    if (paths.length > 0) emit("files-selected", paths);
+  } else {
+    // 浏览器回退
+    fileInput.value?.click();
+  }
+}
+
+/** HTML input 选中（仅浏览器环境） */
+function onInputChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = input.files;
+  if (!files || files.length === 0) return;
+
+  const paths: string[] = [];
+  for (let i = 0; i < files.length; i++) {
+    // 浏览器不支持 .path，但尝试读取
+    const p = (files[i] as any).path;
+    if (p && typeof p === "string" && (p.includes("\\") || p.includes("/"))) {
+      paths.push(p);
+    }
+  }
+  if (paths.length > 0) {
+    emit("files-selected", paths);
+  } else {
+    // 浏览器环境无法获取路径
+    alert("浏览器不支持直接读取文件路径，请在 Tauri 桌面应用中使用此功能。");
+  }
+  input.value = "";
+}
+
+// 拖拽保留（浏览器环境可能用上）
 function onDragEnter(e: DragEvent) {
   e.preventDefault();
   dragCounter++;
@@ -62,62 +128,12 @@ function onDrop(e: DragEvent) {
   e.preventDefault();
   dragCounter = 0;
   isDragging.value = false;
-
+  // Tauri 环境下走原生对话框，拖放不支持路径获取
+  if (isTauri) return;
+  // 浏览器环境尝试
   const files = e.dataTransfer?.files;
   if (!files || files.length === 0) return;
-
-  const filtered = filterFiles(files);
-  if (filtered.length > 0) {
-    emit("files-selected", filtered);
-  }
-}
-
-/** 根据 accept 过滤 FileList,返回匹配的文件 */
-function filterFiles(fileList: FileList): File[] {
-  const result: File[] = [];
-  for (let i = 0; i < fileList.length; i++) {
-    if (matchAccept(fileList[i])) {
-      result.push(fileList[i]);
-    }
-  }
-  return result;
-}
-
-/** 检查单个文件是否匹配 accept 规则 */
-function matchAccept(file: File): boolean {
-  if (!props.accept || props.accept === "*") return true;
-
-  const patterns = props.accept.split(",").map((s) => s.trim());
-
-  return patterns.some((pattern) => {
-    if (pattern.startsWith(".")) {
-      // 扩展名匹配: ".pdf"
-      return file.name.toLowerCase().endsWith(pattern.toLowerCase());
-    }
-    if (pattern.endsWith("/*")) {
-      // MIME 类型组: "image/*"
-      return file.type.startsWith(pattern.slice(0, -1));
-    }
-    // 精确 MIME 匹配
-    return file.type === pattern;
-  });
-}
-
-function onClick() {
-  fileInput.value?.click();
-}
-
-function onInputChange(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const files = input.files;
-  if (!files || files.length === 0) return;
-
-  const filtered = filterFiles(files);
-  if (filtered.length > 0) {
-    emit("files-selected", filtered);
-  }
-  // 重置以允许重复选同一个文件
-  input.value = "";
+  onInputChange({ target: { files, value: "" } } as any);
 }
 </script>
 
@@ -132,10 +148,11 @@ function onInputChange(e: Event) {
     @click="onClick"
   >
     <input
+      v-if="!isTauri"
       ref="fileInput"
       type="file"
-      :accept="acceptAttr"
-      :multiple="multiple"
+      :accept="props.accept === '*' ? undefined : props.accept"
+      :multiple="props.multiple"
       class="file-input-hidden"
       @change="onInputChange"
     />
@@ -146,7 +163,7 @@ function onInputChange(e: Event) {
       </el-icon>
       <p class="drop-text">
         <template v-if="isDragging"> 松开以添加文件 </template>
-        <template v-else> 拖拽文件到此处,或点击选择 </template>
+        <template v-else> 点击选择文件 </template>
       </p>
       <p v-if="accept && accept !== '*'" class="drop-hint">支持格式: {{ accept }}</p>
     </div>

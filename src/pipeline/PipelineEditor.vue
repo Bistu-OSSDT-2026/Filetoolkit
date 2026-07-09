@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from "vue";
 import { VueFlow, useVueFlow } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -10,17 +10,27 @@ import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Upload, Download, Check, RefreshLeft, Files } from "@element-plus/icons-vue";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 import NodePanel from "./NodePanel.vue";
 import NodeParamForm from "./NodeParamForm.vue";
 import TemplateManager from "./TemplateManager.vue";
 import { PipelineState } from "../composables/usePipeline";
 import type { Pipeline } from "../pipeline/types";
 
-const { nodes, edges, onConnect, onNodeClick, onPaneClick, screenToFlowCoordinate } = useVueFlow();
+const { onConnect, onNodeClick, onPaneClick, screenToFlowCoordinate } = useVueFlow();
 
-const pipeline = new PipelineState(nodes, edges);
+// PipelineState 管理自己的 flowNodes/flowEdges，不与 useVueFlow() 共享 ref
+const pipeline = new PipelineState();
 const showValidationErrors = ref(false);
 const showTemplateDialog = ref(false);
+
+/** .flow-canvas 的 DOM 引用，用于注册原生事件监听 */
+const flowCanvasRef = ref<HTMLElement | null>(null);
+
+function onDragEnter(event: DragEvent) {
+  event.preventDefault();
+}
 
 function onDragOver(event: DragEvent) {
   event.preventDefault();
@@ -28,9 +38,41 @@ function onDragOver(event: DragEvent) {
 }
 
 function onDrop(event: DragEvent) {
-  const nodeTypeId = event.dataTransfer?.getData("application/vueflow-node-type");
+  event.preventDefault();
+  const dt = event.dataTransfer;
+  if (!dt) return;
+  const nodeTypeId =
+    dt.getData("application/vueflow-node-type") ||
+    dt.getData("text/plain");
   if (!nodeTypeId) return;
   pipeline.addNode(nodeTypeId, screenToFlowCoordinate({ x: event.clientX, y: event.clientY }));
+}
+
+/** 备选：点击添加节点（Tauri WebView2 拖放不可用时的 fallback） */
+function handleClickAddNode(nodeTypeId: string) {
+  pipeline.addNode(nodeTypeId, { x: 250, y: 150 });
+}
+
+// ========== 原生事件绑定（CAPTURE 阶段）：在 VueFlow 内部消费事件之前拦截 ==========
+// VueFlow 的 .vue-flow__pane 在 bubble 阶段会调用 stopPropagation()，
+// 导致绑定在外层的冒泡监听器收不到事件。
+// 解决方法：使用 capture 阶段（第三个参数 true），从外层向里层传播时优先触发。
+
+function bindNativeDragEvents() {
+  const el = flowCanvasRef.value;
+  if (!el) return;
+  // true = capture phase，优先于 VueFlow 内部 .vue-flow__pane 的 bubble handler
+  el.addEventListener("dragenter", onDragEnter, true);
+  el.addEventListener("dragover", onDragOver, true);
+  el.addEventListener("drop", onDrop, true);
+}
+
+function unbindNativeDragEvents() {
+  const el = flowCanvasRef.value;
+  if (!el) return;
+  el.removeEventListener("dragenter", onDragEnter, true);
+  el.removeEventListener("dragover", onDragOver, true);
+  el.removeEventListener("drop", onDrop, true);
 }
 
 onConnect((connection) => pipeline.addEdge(connection));
@@ -68,13 +110,33 @@ function handleClear() {
     .then(() => pipeline.clearCanvas())
     .catch(() => {});
 }
-function handleExport() {
+async function handleExport() {
   const json = pipeline.toPipelineJSON();
-  const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+  const content = JSON.stringify(json, null, 2);
+  const defaultName = `${pipeline.pipelineName.value || "pipeline"}.json`;
+
+  // 检测是否在 Tauri 环境（有原生对话框可用）
+  if (window.__TAURI_INTERNALS__) {
+    try {
+      const filePath = await save({
+        defaultPath: defaultName,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (!filePath) return; // 用户取消
+      await writeTextFile(filePath, content);
+      ElMessage.success("流水线已导出");
+    } catch (e) {
+      ElMessage.error("导出失败: " + String(e));
+    }
+    return;
+  }
+
+  // 浏览器环境：blob 下载
+  const blob = new Blob([content], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${pipeline.pipelineName.value || "pipeline"}.json`;
+  a.download = defaultName;
   a.click();
   URL.revokeObjectURL(url);
   ElMessage.success("流水线已导出");
@@ -114,13 +176,24 @@ function onKeydown(e: KeyboardEvent) {
     pipeline.removeNode(pipeline.selectedNodeId.value);
   }
 }
-onMounted(() => window.addEventListener("keydown", onKeydown));
-onUnmounted(() => window.removeEventListener("keydown", onKeydown));
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown);
+  bindNativeDragEvents();
+});
+onBeforeUnmount(() => {
+  // 清空画布数据，强制 Vue Flow 释放内部状态
+  pipeline.flowNodes.value = [];
+  pipeline.flowEdges.value = [];
+});
+onUnmounted(() => {
+  window.removeEventListener("keydown", onKeydown);
+  unbindNativeDragEvents();
+});
 </script>
 
 <template>
-  <div class="pipeline-editor" @dragover="onDragOver" @drop="onDrop">
-    <aside class="editor-left"><NodePanel /></aside>
+  <div class="pipeline-editor">
+    <aside class="editor-left"><NodePanel @add-node="handleClickAddNode" /></aside>
     <main class="editor-center">
       <div class="canvas-toolbar">
         <div class="toolbar-left">
@@ -165,10 +238,13 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
           </ul>
         </template>
       </el-alert>
-      <div class="flow-canvas">
+      <!-- 拖放事件仅通过原生 addEventListener (capture 阶段) 处理 -->
+      <div ref="flowCanvasRef" class="flow-canvas">
         <VueFlow
-          v-model:nodes="nodes"
-          v-model:edges="edges"
+          :nodes="pipeline.flowNodes.value"
+          :edges="pipeline.flowEdges.value"
+          @update:nodes="pipeline.acceptFlowNodes($event)"
+          @update:edges="pipeline.acceptFlowEdges($event)"
           :default-viewport="{ x: 0, y: 0, zoom: 1 }"
           :min-zoom="0.2"
           :max-zoom="4"
@@ -210,7 +286,10 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 <style scoped>
 .pipeline-editor {
   display: flex;
-  height: 100%;
+  /* 使用 flex:1 撑满父容器（el-main 是 flex column），
+     避免 height:100% 在 overflow-y:auto 父容器中解析失败 */
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 .editor-left {

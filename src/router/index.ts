@@ -38,6 +38,16 @@ const router = createRouter({
       name: "disk-usage",
       component: () => import("../pages/DiskUsagePage.vue"),
     },
+    {
+      path: "/video",
+      name: "video",
+      component: () => import("../pages/VideoPage.vue"),
+    },
+    {
+      path: "/audio",
+      name: "audio",
+      component: () => import("../pages/AudioPage.vue"),
+    },
   ],
 });
 

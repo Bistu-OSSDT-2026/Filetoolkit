@@ -1,0 +1,11 @@
+/Users/yanghongming/Desktop/c1/target/debug/deps/string_cache-25a16805a76e3725.d: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/atom.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/dynamic_set.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/static_sets.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/trivial_impls.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libstring_cache-25a16805a76e3725.rlib: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/atom.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/dynamic_set.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/static_sets.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/trivial_impls.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libstring_cache-25a16805a76e3725.rmeta: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/atom.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/dynamic_set.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/static_sets.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/trivial_impls.rs
+
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/lib.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/atom.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/dynamic_set.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/static_sets.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/string_cache-0.9.0/src/trivial_impls.rs:

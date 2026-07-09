@@ -1,34 +1,41 @@
-import { createRouter, createWebHashHistory } from "vue-router";
+import { createRouter, createWebHistory } from 'vue-router'
+import HomePage from '../pages/HomePage.vue'
+import RenamePage from '../pages/RenamePage.vue'
+import DedupPage from '../pages/DedupPage.vue'
+import PdfPage from '../pages/PdfPage.vue'
+import ChecksumPage from '../pages/ChecksumPage.vue'
+
+const routes = [
+  {
+    path: '/',
+    name: '首页',
+    component: HomePage
+  },
+  {
+    path: '/rename',
+    name: '批量重命名',
+    component: RenamePage
+  },
+  {
+    path: '/dedup',
+    name: '重复文件清理',
+    component: DedupPage
+  },
+  {
+    path: '/pdf',
+    name: 'PDF OCR文字提取',
+    component: PdfPage
+  },
+  {
+    path: '/checksum',
+    name: '文件哈希校验',
+    component: ChecksumPage
+  }
+]
 
 const router = createRouter({
-  history: createWebHashHistory(),
-  routes: [
-    {
-      path: "/",
-      name: "home",
-      component: () => import("../pages/HomePage.vue"),
-    },
-    {
-      path: "/image",
-      name: "image",
-      component: () => import("../pages/ImagePage.vue"),
-    },
-    {
-      path: "/pdf",
-      name: "pdf",
-      component: () => import("../pages/PdfPage.vue"),
-    },
-    {
-      path: "/rename",
-      name: "rename",
-      component: () => import("../pages/RenamePage.vue"),
-    },
-    {
-      path: "/dedup",
-      name: "dedup",
-      component: () => import("../pages/DedupPage.vue"),
-    },
-  ],
-});
+  history: createWebHistory(),
+  routes
+})
 
-export default router;
+export default router

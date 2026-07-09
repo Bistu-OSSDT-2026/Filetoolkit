@@ -1,0 +1,11 @@
+/Users/yanghongming/Desktop/c1/target/debug/deps/powerfmt-da3047f23f0e067e.d: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/buf.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/ext.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display_impls.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libpowerfmt-da3047f23f0e067e.rlib: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/buf.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/ext.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display_impls.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libpowerfmt-da3047f23f0e067e.rmeta: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/buf.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/ext.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display_impls.rs
+
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/lib.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/buf.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/ext.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/powerfmt-0.2.0/src/smart_display_impls.rs:

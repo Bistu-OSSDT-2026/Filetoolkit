@@ -1,0 +1,4 @@
+sha1::digest::hybrid_array::Array<u8, UInt<UInt<UInt<UInt<UInt<UTerm, B1>, B0>, B1>, B0>, B0>>
+sha1::digest::hybrid_array::Array<u8, UInt<UInt<UInt<UInt<UInt<UTerm, B1>, B0>, B1>, B0>, B0>>: LowerHex
+objc2_foundation::generated::__NSAttributedString::NSAttributedStringEnumerationOptions
+objc2_foundation::generated::__NSAttributedString::NSAttributedStringFormattingOptions

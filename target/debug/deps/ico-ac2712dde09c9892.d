@@ -1,0 +1,12 @@
+/Users/yanghongming/Desktop/c1/target/debug/deps/ico-ac2712dde09c9892.d: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/macros.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/bmpdepth.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/icondir.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/image.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/restype.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libico-ac2712dde09c9892.rlib: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/macros.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/bmpdepth.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/icondir.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/image.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/restype.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libico-ac2712dde09c9892.rmeta: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/macros.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/bmpdepth.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/icondir.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/image.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/restype.rs
+
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/lib.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/macros.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/bmpdepth.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/icondir.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/image.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/ico-0.5.0/src/restype.rs:

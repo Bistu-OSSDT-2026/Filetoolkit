@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { invoke } from '@tauri-apps/api/invoke'
+import { invoke } from '@tauri-apps/api/core'
 
 // 音频格式转换
 async function audioConvert() {

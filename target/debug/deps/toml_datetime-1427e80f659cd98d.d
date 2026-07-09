@@ -1,0 +1,10 @@
+/Users/yanghongming/Desktop/c1/target/debug/deps/toml_datetime-1427e80f659cd98d.d: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/datetime.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/de.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/ser.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libtoml_datetime-1427e80f659cd98d.rlib: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/datetime.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/de.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/ser.rs
+
+/Users/yanghongming/Desktop/c1/target/debug/deps/libtoml_datetime-1427e80f659cd98d.rmeta: /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/lib.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/datetime.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/de.rs /Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/ser.rs
+
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/lib.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/datetime.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/de.rs:
+/Users/yanghongming/.cargo/registry/src/rsproxy.cn-e3de039b2554c837/toml_datetime-1.1.1+spec-1.1.0/src/ser.rs:

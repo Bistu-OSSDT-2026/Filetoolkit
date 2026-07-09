@@ -1,17 +1,8 @@
-use tauri::Builder;
-
-mod commands;
-use commands::*;
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    Builder::default()
-        // 正确宏写法：![] 包裹所有命令，彻底解决宏报错
-        .invoke_handler(tauri::generate_handler![
-            rename_file,
-            scan_duplicate_files,
-            delete_duplicate_file,
-            get_video_files
-        ])
+    tauri::Builder::default()
         .run(tauri::generate_context!())
-        .expect("应用启动失败");
+        .expect("error while running tauri application");
 }

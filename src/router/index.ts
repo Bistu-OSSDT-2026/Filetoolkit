@@ -28,6 +28,11 @@ const router = createRouter({
       name: "dedup",
       component: () => import("../pages/DedupPage.vue"),
     },
+    {
+      path: "/pipeline",
+      name: "pipeline",
+      component: () => import("../pipeline/PipelineEditor.vue"),
+    },
   ],
 });
 

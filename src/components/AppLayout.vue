@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { House, Picture, Document, EditPen, Search, Fold, Expand } from "@element-plus/icons-vue";
+import {
+  House,
+  Picture,
+  Document,
+  EditPen,
+  Search,
+  Connection,
+  Fold,
+  Expand,
+} from "@element-plus/icons-vue";
 
 const SIDEBAR_KEY = "filetoolkit:sidebar-collapsed";
 
@@ -34,6 +43,8 @@ const navItems = [
   { path: "/dedup", label: "重复查重", icon: Search },
 ];
 
+const advancedItems = [{ path: "/pipeline", label: "流水线", icon: Connection }];
+
 function handleSelect(path: string) {
   router.push(path);
 }
@@ -65,6 +76,22 @@ function toggleSidebar() {
             {{ item.label }}
           </template>
         </el-menu-item>
+        <el-menu-item-group v-if="!isCollapsed" title="高级">
+          <el-menu-item v-for="item in advancedItems" :key="item.path" :index="item.path">
+            <el-icon><component :is="item.icon" /></el-icon>
+            <template #title>
+              {{ item.label }}
+            </template>
+          </el-menu-item>
+        </el-menu-item-group>
+        <template v-else>
+          <el-menu-item v-for="item in advancedItems" :key="item.path" :index="item.path">
+            <el-icon><component :is="item.icon" /></el-icon>
+            <template #title>
+              {{ item.label }}
+            </template>
+          </el-menu-item>
+        </template>
       </el-menu>
     </el-aside>
 

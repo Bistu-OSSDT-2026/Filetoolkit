@@ -22,6 +22,7 @@ pub fn run() {
             common::dependency::clear_dependency_cache,
             pipeline::registry::get_node_types,
             pipeline::registry::get_node_types_grouped,
+            pipeline::preview::preview_pipeline,
             worker::cancel_batch,
         ])
         .run(tauri::generate_context!())

@@ -99,13 +99,13 @@ pub fn get_all_node_types() -> Vec<NodeType> {
             params: vec![],
         },
         // ============================================================
-        // 文件重命名(C 实现)
+        // 文件重命名(C 实现) —— 适配 C 的 rename_files API
         // ============================================================
         NodeType {
             id: "rename".into(),
             name: "批量重命名".into(),
             category: "文件".into(),
-            description: "按模板变量批量重命名文件".into(),
+            description: "为文件批量添加前缀+序号+后缀".into(),
             icon: "Edit".into(),
             inputs: vec![PortDef {
                 id: "input".into(),
@@ -118,22 +118,23 @@ pub fn get_all_node_types() -> Vec<NodeType> {
                 port_type: "file[]".into(),
             }],
             params: vec![
-                string_param("pattern", "命名模板", "{name}-{index:3}", true,
-                    "变量: {name}原名 {ext}扩展名 {index:3}序号 {date:yyyy-MM-dd}日期"),
+                string_param("prefix", "前缀", "img_", false, "文件名前缀,如 img_"),
+                number_param("startNum", "起始数字", Some(1.0), false, "序号起始值,如 1 或 001"),
+                string_param("suffix", "后缀", "", false, "文件名后缀(可选),如 _v2"),
             ],
         },
         // ============================================================
-        // 查重(C 实现)
+        // 查重(C 实现) —— 适配 C 的 scan_duplicate_files + delete_duplicate API
         // ============================================================
         NodeType {
             id: "dedup".into(),
-            name: "查重".into(),
+            name: "查重清理".into(),
             category: "文件".into(),
-            description: "扫描目录,识别重复文件并去重".into(),
+            description: "扫描目录找出重复文件并批量删除".into(),
             icon: "Search".into(),
             inputs: vec![PortDef {
                 id: "input".into(),
-                label: "目录".into(),
+                label: "扫描目录".into(),
                 port_type: "directory".into(),
             }],
             outputs: vec![PortDef {
@@ -144,7 +145,7 @@ pub fn get_all_node_types() -> Vec<NodeType> {
             params: vec![
                 select_param("keepStrategy", "保留策略", &[
                     ("newest", "保留最新"), ("largest", "保留最大"), ("first", "保留第一个"),
-                ], "newest", false, ""),
+                ], "newest", false, "每组重复文件保留哪一个,其余删除"),
             ],
         },
         // ============================================================

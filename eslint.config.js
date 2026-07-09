@@ -22,6 +22,7 @@ export default [
         URL: "readonly",
         document: "readonly",
         window: "readonly",
+        prompt: "readonly",
       },
     },
   },

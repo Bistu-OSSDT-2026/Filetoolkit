@@ -33,6 +33,11 @@ const router = createRouter({
       name: "pipeline",
       component: () => import("../pipeline/PipelineEditor.vue"),
     },
+    {
+      path: "/disk-usage",
+      name: "disk-usage",
+      component: () => import("../pages/DiskUsagePage.vue"),
+    },
   ],
 });
 

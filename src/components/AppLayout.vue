@@ -8,6 +8,7 @@ import {
   EditPen,
   Search,
   Connection,
+  FolderOpened,
   Fold,
   Expand,
 } from "@element-plus/icons-vue";
@@ -43,7 +44,10 @@ const navItems = [
   { path: "/dedup", label: "重复查重", icon: Search },
 ];
 
-const advancedItems = [{ path: "/pipeline", label: "流水线", icon: Connection }];
+const advancedItems = [
+  { path: "/pipeline", label: "流水线", icon: Connection },
+  { path: "/disk-usage", label: "磁盘可视化", icon: FolderOpened },
+];
 
 function handleSelect(path: string) {
   router.push(path);

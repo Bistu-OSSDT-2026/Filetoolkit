@@ -7,6 +7,7 @@ pub mod pdf; // PDF 处理(M1):合并/拆分/压缩
 pub mod video; // 视频处理(M2):剪切/转码/压缩
 pub mod rename; // 批量重命名(M1)
 pub mod dedup; // 重复文件查重(M1)
+pub mod diskusage; // 磁盘占用可视化(M4)
 
 /// 调通命令:M0 阶段用于验证前后端通信闭环。
 /// 后续 MVP 功能上线后保留,可用于健康检查。

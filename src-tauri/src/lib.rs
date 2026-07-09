@@ -15,6 +15,7 @@ pub fn run() {
             pipeline::registry::get_node_types,
             pipeline::registry::get_node_types_grouped,
             pipeline::preview::preview_pipeline,
+            commands::diskusage::scan_directory,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

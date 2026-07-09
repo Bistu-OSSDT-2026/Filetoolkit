@@ -16,6 +16,7 @@ export default [
         DragEvent: "readonly",
         Event: "readonly",
         HTMLInputElement: "readonly",
+        localStorage: "readonly",
       },
     },
   },
@@ -35,6 +36,10 @@ export default [
   {
     rules: {
       "vue/multi-word-component-names": "off",
+      // 以下规则与 Prettier 格式化冲突,交由 Prettier 统一管理:
+      "vue/max-attributes-per-line": "off",
+      "vue/singleline-html-element-content-newline": "off",
+      "vue/html-self-closing": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },

@@ -3,9 +3,28 @@ import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { House, Picture, Document, EditPen, Search, Fold, Expand } from "@element-plus/icons-vue";
 
+const SIDEBAR_KEY = "filetoolkit:sidebar-collapsed";
+
+function loadSidebarState(): boolean {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_KEY);
+    return raw !== null ? raw === "true" : false;
+  } catch {
+    return false;
+  }
+}
+
+function saveSidebarState(collapsed: boolean) {
+  try {
+    localStorage.setItem(SIDEBAR_KEY, String(collapsed));
+  } catch {
+    // localStorage 不可用时静默忽略(私密模式等)
+  }
+}
+
 const router = useRouter();
 const route = useRoute();
-const isCollapsed = ref(false);
+const isCollapsed = ref(loadSidebarState());
 
 const navItems = [
   { path: "/", label: "首页", icon: House },
@@ -17,6 +36,11 @@ const navItems = [
 
 function handleSelect(path: string) {
   router.push(path);
+}
+
+function toggleSidebar() {
+  isCollapsed.value = !isCollapsed.value;
+  saveSidebarState(isCollapsed.value);
 }
 </script>
 
@@ -47,7 +71,7 @@ function handleSelect(path: string) {
     <!-- 主区域 -->
     <el-container>
       <el-header class="app-header">
-        <el-icon class="collapse-btn" :size="20" @click="isCollapsed = !isCollapsed">
+        <el-icon class="collapse-btn" :size="20" @click="toggleSidebar">
           <component :is="isCollapsed ? Expand : Fold" />
         </el-icon>
       </el-header>

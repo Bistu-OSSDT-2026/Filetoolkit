@@ -125,21 +125,21 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
           />
         </div>
         <div class="toolbar-right">
-          <el-button size="small" @click="handleImport"
-            ><el-icon><Upload /></el-icon>导入</el-button
-          >
-          <el-button size="small" @click="handleExport"
-            ><el-icon><Download /></el-icon>导出</el-button
-          >
-          <el-button size="small" type="danger" text @click="handleDelete"
-            ><el-icon><Delete /></el-icon>删除节点</el-button
-          >
-          <el-button size="small" type="primary" @click="handleValidate"
-            ><el-icon><Check /></el-icon>校验</el-button
-          >
-          <el-button size="small" text @click="handleClear"
-            ><el-icon><RefreshLeft /></el-icon>清空</el-button
-          >
+          <el-button size="small" @click="handleImport">
+            <el-icon><Upload /></el-icon>导入
+          </el-button>
+          <el-button size="small" @click="handleExport">
+            <el-icon><Download /></el-icon>导出
+          </el-button>
+          <el-button size="small" type="danger" text @click="handleDelete">
+            <el-icon><Delete /></el-icon>删除节点
+          </el-button>
+          <el-button size="small" type="primary" @click="handleValidate">
+            <el-icon><Check /></el-icon>校验
+          </el-button>
+          <el-button size="small" text @click="handleClear">
+            <el-icon><RefreshLeft /></el-icon>清空
+          </el-button>
         </div>
       </div>
       <el-alert

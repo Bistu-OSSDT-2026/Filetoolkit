@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpened, RefreshRight } from "@element-plus/icons-vue";
 import SunburstChart from "../components/SunburstChart.vue";
 import { useDiskScan } from "../composables/useDiskScan";
+
+const { t } = useI18n();
 
 const { scanning, progress, data, error, scan } = useDiskScan();
 
@@ -32,21 +35,15 @@ function formatBytes(bytes: number): string {
     <div class="du-header">
       <h2>
         <el-icon :size="24"><FolderOpened /></el-icon>
-        磁盘占用可视化
+        {{ t("diskUsage.title") }}
       </h2>
       <div class="du-controls">
-        <el-input
-          v-model="selectedDir"
-          placeholder="目录路径，或点击右侧按钮选择"
-          size="default"
-          style="width: 360px"
-          clearable
-        />
+        <el-input v-model="selectedDir" :placeholder="t('diskUsage.directoryPath')" size="default" style="width: 360px" clearable />
         <el-button type="primary" :loading="scanning" @click="selectAndScan">
-          <el-icon><FolderOpened /></el-icon>选择目录
+          <el-icon><FolderOpened /></el-icon>{{ t("diskUsage.selectDir") }}
         </el-button>
         <el-button v-if="selectedDir" :loading="scanning" @click="scan(selectedDir)">
-          <el-icon><RefreshRight /></el-icon>重新扫描
+          <el-icon><RefreshRight /></el-icon>{{ t("diskUsage.rescan") }}
         </el-button>
       </div>
     </div>

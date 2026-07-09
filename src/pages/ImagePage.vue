@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useBatchTask } from "../composables/useBatchTask";
 import FileDropZone from "../components/FileDropZone.vue";
 import TaskProgress from "../components/TaskProgress.vue";
@@ -16,6 +17,7 @@ const outputDir = ref("");
 const results = ref<ResultItem[]>([]);
 
 const { run, cancel, progress, status, message } = useBatchTask("compress_images");
+const { t } = useI18n();
 
 // ====== 文件选择 ======
 function onFilesSelected(paths: string[]) {
@@ -61,45 +63,45 @@ async function startCompress() {
 
 <template>
   <div class="page-container">
-    <h2>图片批量压缩/转换</h2>
-    <p class="page-desc">支持 JPG、PNG、WebP 格式的批量压缩、转换和尺寸调整</p>
+    <h2>{{ t("image.title") }}</h2>
+    <p class="page-desc">{{ t("image.desc") }}</p>
 
     <!-- 文件选择 -->
     <section class="section">
-      <h3>选择图片</h3>
+      <h3>{{ t("image.selectFiles") }}</h3>
       <FileDropZone accept="image/*" @files-selected="onFilesSelected" />
       <div v-if="filePaths.length > 0" class="file-list">
         <div v-for="(f, i) in filePaths" :key="i" class="file-item">
           <span>{{ f }}</span>
-          <el-button size="small" type="danger" text @click="removeFile(i)">移除</el-button>
+          <el-button size="small" type="danger" text @click="removeFile(i)">{{ t("image.removeFile") }}</el-button>
         </div>
-        <el-button size="small" @click="clearFiles">清除全部</el-button>
+        <el-button size="small" @click="clearFiles">{{ t("image.clearAll") }}</el-button>
       </div>
     </section>
 
     <!-- 参数 -->
     <section class="section">
-      <h3>输出设置</h3>
+      <h3>{{ t("image.outputSettings") }}</h3>
       <el-form label-width="110px" size="default">
-        <el-form-item label="输出格式">
+        <el-form-item :label="t('image.outputFormat')">
           <el-select v-model="format">
             <el-option label="JPEG" value="jpg" />
-            <el-option label="PNG (无损)" value="png" />
-            <el-option label="WebP (无损)" value="webp" />
+            <el-option :label="t('image.noLimit') + ' PNG'" value="png" />
+            <el-option :label="t('image.noLimit') + ' WebP'" value="webp" />
           </el-select>
         </el-form-item>
-        <el-form-item label="质量">
+        <el-form-item :label="t('image.quality')">
           <el-slider v-model="quality" :min="1" :max="100" show-input style="width: 300px" />
         </el-form-item>
-        <el-form-item label="最大宽度(px)">
-          <el-input-number v-model="maxWidth" :min="0" :placeholder="'不限制'" clearable />
+        <el-form-item :label="t('image.maxWidth')">
+          <el-input-number v-model="maxWidth" :min="0" :placeholder="t('image.noLimit')" clearable />
         </el-form-item>
-        <el-form-item label="最大高度(px)">
-          <el-input-number v-model="maxHeight" :min="0" :placeholder="'不限制'" clearable />
+        <el-form-item :label="t('image.maxHeight')">
+          <el-input-number v-model="maxHeight" :min="0" :placeholder="t('image.noLimit')" clearable />
         </el-form-item>
-        <el-form-item label="输出目录">
+        <el-form-item :label="t('image.outputDir')">
           <el-input v-model="outputDir" placeholder="例如: D:/images/output" style="width: 400px" />
-          <div class="form-hint">目录会自动创建，使用正斜杠 / 分隔路径</div>
+          <div class="form-hint">{{ t("image.outputDirHint") }}</div>
         </el-form-item>
       </el-form>
     </section>
@@ -112,7 +114,7 @@ async function startCompress() {
         :disabled="filePaths.length === 0 || !outputDir || status === 'running'"
         @click="startCompress"
       >
-        {{ status === "running" ? "处理中..." : "开始压缩" }}
+        {{ status === "running" ? t("image.processing") : t("image.startCompress") }}
       </el-button>
       <el-button v-if="status === 'running'" type="warning" @click="cancel">取消</el-button>
     </div>

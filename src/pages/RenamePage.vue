@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ElMessage } from "element-plus";
+
+const { t } = useI18n();
 
 // ====== 状态 ======
 const filePaths = ref("");
@@ -70,53 +73,42 @@ async function renameFiles() {
 
 <template>
   <div class="page-container">
-    <h2>批量重命名</h2>
-    <p class="page-desc">为文件添加前缀/后缀、编号，支持实时预览</p>
+    <h2>{{ t("rename.title") }}</h2>
+    <p class="page-desc">{{ t("rename.desc") }}</p>
 
     <section class="section">
-      <h3>选择文件</h3>
+      <h3>{{ t("rename.selectFiles") }}</h3>
       <div class="drop-zone" @click="selectFiles">
-        <p>点击选择要重命名的文件</p>
+        <p>{{ t("rename.clickSelect") }}</p>
       </div>
 
       <el-form label-width="100px" class="form-section">
-        <el-form-item label="文件路径">
-          <el-input
-            v-model="filePaths"
-            type="textarea"
-            :rows="4"
-            placeholder="每行一个文件路径，或点击上方按钮选择文件"
-          />
+        <el-form-item :label="t('rename.filePaths')">
+          <el-input v-model="filePaths" type="textarea" :rows="4" :placeholder="t('rename.filePathPlaceholder')" />
         </el-form-item>
-        <el-form-item label="前缀">
-          <el-input v-model="prefix" placeholder="例如: 项目文档_" />
+        <el-form-item :label="t('rename.prefix')">
+          <el-input v-model="prefix" :placeholder="t('rename.prefixPlaceholder')" />
         </el-form-item>
-        <el-form-item label="起始编号">
+        <el-form-item :label="t('rename.startNum')">
           <el-input-number v-model="startNum" :min="0" :max="99999" />
-          <span class="form-hint">文件名将按文件顺序编号: 前缀_1_后缀, 前缀_2_后缀...</span>
+          <span class="form-hint">{{ t("rename.startNumHint") }}</span>
         </el-form-item>
-        <el-form-item label="后缀">
-          <el-input v-model="suffix" placeholder="例如: _v1（可选）" />
+        <el-form-item :label="t('rename.suffix')">
+          <el-input v-model="suffix" :placeholder="t('rename.suffixPlaceholder')" />
         </el-form-item>
       </el-form>
 
-      <el-button
-        type="primary"
-        size="large"
-        :disabled="!filePaths.trim() || isRunning"
-        :loading="isRunning"
-        @click="renameFiles"
-      >
-        开始重命名
+      <el-button type="primary" size="large" :disabled="!filePaths.trim() || isRunning" :loading="isRunning" @click="renameFiles">
+        {{ t("rename.startRename") }}
       </el-button>
     </section>
 
     <!-- 结果 -->
     <section v-if="resultMsg" class="section">
-      <h3>执行结果</h3>
+      <h3>{{ t("rename.result") }}</h3>
       <el-alert :title="resultMsg" :type="failList.length > 0 ? 'warning' : 'success'" show-icon />
       <div v-if="failList.length > 0" class="fail-section">
-        <h4>失败的文件 ({{ failList.length }}):</h4>
+        <h4>{{ t("rename.failedFiles", { count: failList.length }) }}:</h4>
         <div v-for="(f, i) in failList" :key="i" class="fail-item">{{ f }}</div>
       </div>
     </section>

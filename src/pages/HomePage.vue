@@ -1,42 +1,18 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { Picture, Document, EditPen, Search } from "@element-plus/icons-vue";
 
 const router = useRouter();
+const { t } = useI18n();
 
-interface ToolCard {
-  path: string;
-  icon: typeof Picture;
-  title: string;
-  description: string;
-}
-
-const tools: ToolCard[] = [
-  {
-    path: "/image",
-    icon: Picture,
-    title: "图片处理",
-    description: "批量压缩、格式转换、调整尺寸",
-  },
-  {
-    path: "/pdf",
-    icon: Document,
-    title: "PDF 工具",
-    description: "合并、拆分、压缩 PDF 文件",
-  },
-  {
-    path: "/rename",
-    icon: EditPen,
-    title: "批量重命名",
-    description: "模板变量、实时预览、冲突检测",
-  },
-  {
-    path: "/dedup",
-    icon: Search,
-    title: "重复查重",
-    description: "智能扫描、分组展示、一键清理",
-  },
-];
+const tools = computed(() => [
+  { path: "/image", icon: Picture, title: t("home.imageCard"), description: t("home.imageDesc") },
+  { path: "/pdf",    icon: Document, title: t("home.pdfCard"),    description: t("home.pdfDesc") },
+  { path: "/rename", icon: EditPen,  title: t("home.renameCard"), description: t("home.renameDesc") },
+  { path: "/dedup",  icon: Search,   title: t("home.dedupCard"),  description: t("home.dedupDesc") },
+]);
 
 function goTo(path: string) {
   router.push(path);
@@ -47,8 +23,8 @@ function goTo(path: string) {
   <div class="home">
     <div class="hero">
       <h1>FileToolkit</h1>
-      <p class="tagline">一站式本地文件批量处理工具</p>
-      <p class="tagline-sub">本地优先 · 隐私安全 · 轻量高效</p>
+      <p class="tagline">{{ t("home.welcome") }}</p>
+      <p class="tagline-sub">{{ t("home.desc") }}</p>
     </div>
 
     <div class="tools-grid">

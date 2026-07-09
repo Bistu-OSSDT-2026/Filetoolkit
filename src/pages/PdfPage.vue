@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ElMessage } from "element-plus";
+
+const { t } = useI18n();
 
 const activeTab = ref("merge");
 
@@ -104,28 +107,28 @@ async function compressPdf() {
 
 <template>
   <div class="page-container">
-    <h2>PDF 工具</h2>
-    <p class="page-desc">合并、拆分、压缩 PDF 文件</p>
+    <h2>{{ t("pdf.title") }}</h2>
+    <p class="page-desc">{{ t("pdf.desc") }}</p>
 
     <el-tabs v-model="activeTab" class="pdf-tabs">
       <!-- 合并 -->
-      <el-tab-pane label="合并" name="merge">
+      <el-tab-pane :label="t('pdf.merge')" name="merge">
         <section class="section">
-          <h3>选择 PDF 文件</h3>
+          <h3>{{ t("pdf.selectPdfFiles") }}</h3>
           <div class="drop-zone" @click="selectMergeFiles">
-            <p>点击选择多个 PDF 文件（按选择顺序合并）</p>
+            <p>{{ t("pdf.clickSelectMultiple") }}</p>
           </div>
           <div v-if="mergeFiles.length > 0" class="file-list">
             <div v-for="(f, i) in mergeFiles" :key="i" class="file-item">
               <span>{{ f.split(/[/\\]/).pop() }}</span>
               <el-button size="small" type="danger" text @click="removeMergeFile(i)">
-                移除
+                {{ t("common.remove") }}
               </el-button>
             </div>
-            <p class="file-count">共 {{ mergeFiles.length }} 个文件</p>
+            <p class="file-count">{{ t("pdf.totalFiles", { count: mergeFiles.length }) }}</p>
           </div>
           <el-form label-width="100px" class="form-section">
-            <el-form-item label="输出路径">
+            <el-form-item :label="t('pdf.outputPath')">
               <el-input v-model="mergeOutput" placeholder="例如: D:/merged.pdf" />
             </el-form-item>
           </el-form>
@@ -134,27 +137,27 @@ async function compressPdf() {
             :disabled="mergeFiles.length < 2 || !mergeOutput"
             @click="mergePdfs"
           >
-            合并 PDF
+            {{ t("pdf.mergePdf") }}
           </el-button>
         </section>
       </el-tab-pane>
 
       <!-- 拆分 -->
-      <el-tab-pane label="拆分" name="split">
+      <el-tab-pane :label="t('pdf.split')" name="split">
         <section class="section">
-          <h3>选择 PDF 文件</h3>
+          <h3>{{ t("pdf.selectPdfFiles") }}</h3>
           <div class="drop-zone" @click="selectSplitFile">
-            <p>{{ splitFile ? splitFile.split(/[/\\]/).pop() : "点击选择 PDF 文件" }}</p>
+            <p>{{ splitFile ? splitFile.split(/[/\\]/).pop() : t("pdf.clickSelectPdf") }}</p>
           </div>
-          <h3>页码范围</h3>
-          <p class="hint">每行一个范围，例如: 1-5, 6-10, 11- （留空表示到末尾）</p>
+          <h3>{{ t("pdf.pageRanges") }}</h3>
+          <p class="hint">{{ t("pdf.pageRangeHint") }}</p>
           <div v-for="(_r, i) in splitRanges" :key="i" class="range-row">
             <el-input v-model="splitRanges[i]" placeholder="例如: 1-5" style="width: 200px" />
-            <el-button size="small" type="danger" text @click="removeRange(i)">移除</el-button>
+            <el-button size="small" type="danger" text @click="removeRange(i)">{{ t("common.remove") }}</el-button>
           </div>
-          <el-button size="small" @click="addRange">+ 添加范围</el-button>
+          <el-button size="small" @click="addRange">{{ t("pdf.addRange") }}</el-button>
           <el-form label-width="100px" class="form-section">
-            <el-form-item label="输出目录">
+            <el-form-item :label="t('pdf.outputDir')">
               <el-input v-model="splitOutputDir" placeholder="例如: D:/split_output" />
             </el-form-item>
           </el-form>
@@ -163,20 +166,20 @@ async function compressPdf() {
             :disabled="!splitFile || splitRanges.length === 0 || !splitOutputDir"
             @click="splitPdf"
           >
-            拆分 PDF
+            {{ t("pdf.splitPdf") }}
           </el-button>
         </section>
       </el-tab-pane>
 
       <!-- 压缩 -->
-      <el-tab-pane label="压缩" name="compress">
+      <el-tab-pane :label="t('pdf.compress')" name="compress">
         <section class="section">
-          <h3>选择 PDF 文件</h3>
+          <h3>{{ t("pdf.selectPdfFiles") }}</h3>
           <div class="drop-zone" @click="selectCompressFile">
-            <p>{{ compressFile ? compressFile.split(/[/\\]/).pop() : "点击选择 PDF 文件" }}</p>
+            <p>{{ compressFile ? compressFile.split(/[/\\]/).pop() : t("pdf.clickSelectPdf") }}</p>
           </div>
           <el-form label-width="100px" class="form-section">
-            <el-form-item label="输出路径">
+            <el-form-item :label="t('pdf.outputPath')">
               <el-input v-model="compressOutput" placeholder="例如: D:/compressed.pdf" />
             </el-form-item>
           </el-form>
@@ -185,7 +188,7 @@ async function compressPdf() {
             :disabled="!compressFile || !compressOutput"
             @click="compressPdf"
           >
-            压缩 PDF
+            {{ t("pdf.compressPdf") }}
           </el-button>
         </section>
       </el-tab-pane>

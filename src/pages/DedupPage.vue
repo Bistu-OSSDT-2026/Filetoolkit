@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ElMessage, ElMessageBox } from "element-plus";
+
+const { t } = useI18n();
 
 // ====== 状态 ======
 const folderPath = ref("");
@@ -140,73 +143,47 @@ async function deleteSelected() {
 
 <template>
   <div class="page-container">
-    <h2>重复文件查重</h2>
-    <p class="page-desc">扫描文件夹，查找并清理重复文件</p>
+    <h2>{{ t("dedup.title") }}</h2>
+    <p class="page-desc">{{ t("dedup.desc") }}</p>
 
-    <!-- 扫描 -->
     <section class="section">
-      <h3>选择扫描目录</h3>
+      <h3>{{ t("dedup.selectDir") }}</h3>
       <div class="folder-row">
         <el-input v-model="folderPath" placeholder="例如: D:/我的文件" style="flex: 1" />
-        <el-button @click="selectFolder">选择文件夹</el-button>
+        <el-button @click="selectFolder">{{ t("dedup.selectFolder") }}</el-button>
       </div>
-      <el-button
-        type="primary"
-        size="large"
-        :disabled="!folderPath.trim() || isScanning"
-        :loading="isScanning"
-        style="margin-top: 12px"
-        @click="scanDuplicates"
-      >
-        开始扫描
+      <el-button type="primary" size="large" :disabled="!folderPath.trim() || isScanning" :loading="isScanning" style="margin-top: 12px" @click="scanDuplicates">
+        {{ isScanning ? t("dedup.scanning") : t("dedup.scan") }}
       </el-button>
     </section>
 
-    <!-- 结果 -->
     <section v-if="duplicateGroups.length > 0" class="section">
       <div class="result-header">
-        <h3>扫描结果</h3>
-        <span class="group-count">共 {{ duplicateGroups.length }} 组重复文件</span>
+        <h3>{{ t("dedup.result") }}</h3>
+        <span class="group-count">{{ t("dedup.totalGroups", { count: duplicateGroups.length }) }}</span>
       </div>
-
       <div v-for="(group, gi) in duplicateGroups" :key="gi" class="group-card">
         <div class="group-title">
-          <el-tag size="small" type="warning">第 {{ gi + 1 }} 组</el-tag>
-          <span class="group-hint">保留第一个，勾选要删除的副本</span>
+          <el-tag size="small" type="warning">{{ t("dedup.group", { index: gi + 1 }) }}</el-tag>
+          <span class="group-hint">{{ t("dedup.groupHint") }}</span>
         </div>
-        <div
-          v-for="(file, fi) in group"
-          :key="fi"
-          class="file-row"
-          :class="{ 'keep-file': fi === 0 }"
-        >
-          <el-checkbox
-            v-if="fi > 0"
-            :model-value="isChecked(file)"
-            @change="() => toggleFile(file)"
-          />
-          <span v-else class="keep-badge">保留</span>
+        <div v-for="(file, fi) in group" :key="fi" class="file-row" :class="{ 'keep-file': fi === 0 }">
+          <el-checkbox v-if="fi > 0" :model-value="isChecked(file)" @change="() => toggleFile(file)" />
+          <span v-else class="keep-badge">{{ t("dedup.keep") }}</span>
           <span class="file-name" :title="file">{{ getFileName(file) }}</span>
           <span class="file-path">{{ file }}</span>
         </div>
       </div>
-
       <div class="delete-actions">
-        <span class="selected-count">已选 {{ getSelectedFiles().length }} 个文件</span>
-        <el-button
-          type="danger"
-          :disabled="getSelectedFiles().length === 0 || isDeleting"
-          :loading="isDeleting"
-          @click="deleteSelected"
-        >
-          删除选中文件
+        <span class="selected-count">{{ t("dedup.selectedCount", { count: getSelectedFiles().length }) }}</span>
+        <el-button type="danger" :disabled="getSelectedFiles().length === 0 || isDeleting" :loading="isDeleting" @click="deleteSelected">
+          {{ t("dedup.deleteSelected") }}
         </el-button>
       </div>
     </section>
 
-    <!-- 空结果 -->
     <section v-if="!isScanning && folderPath && duplicateGroups.length === 0" class="section">
-      <el-alert title="该文件夹中没有发现重复文件" type="success" show-icon />
+      <el-alert :title="t('dedup.noDuplicates')" type="success" show-icon />
     </section>
   </div>
 </template>

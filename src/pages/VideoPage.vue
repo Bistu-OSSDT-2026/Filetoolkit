@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ElMessage } from "element-plus";
+
+const { t } = useI18n();
 
 const activeTab = ref("cut");
 
@@ -123,11 +126,11 @@ async function videoToGif() {
 
 <template>
   <div class="page-container">
-    <h2>视频处理</h2>
-    <p class="page-desc">剪切、转码、GIF 生成（需要 ffmpeg）</p>
+    <h2>{{ t("video.title") }}</h2>
+    <p class="page-desc">{{ t("video.desc") }}</p>
     <el-alert
       v-if="!ffmpegOk"
-      :title="ffmpegMsg || 'ffmpeg 未安装'"
+      :title="ffmpegMsg || t('video.ffmpegMissing')"
       type="error"
       show-icon
       :closable="false"
@@ -135,9 +138,9 @@ async function videoToGif() {
     >
       <template #default>
         <a href="https://ffmpeg.org/download.html" target="_blank" style="color: var(--el-color-primary)">
-          点击下载 ffmpeg
+          {{ t("video.ffmpegDownload") }}
         </a>
-        ，安装后请确保添加到系统 PATH 中，然后重启应用。
+        {{ t("video.ffmpegHint") }}
       </template>
     </el-alert>
     <div v-if="ffmpegOk && ffmpegMsg" class="ffmpeg-info">
@@ -148,95 +151,85 @@ async function videoToGif() {
     </div>
 
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="剪切" name="cut">
+      <el-tab-pane :label="t('video.cut')" name="cut">
         <section class="section">
           <div class="drop-zone" @click="selectCutFile">
-            <p>{{ cutFile ? cutFile.split(/[/\\]/).pop() : "点击选择视频文件" }}</p>
+            <p>{{ cutFile ? cutFile.split(/[/\\]/).pop() : t("video.selectVideo") }}</p>
           </div>
           <el-form label-width="100px" class="form-section">
-            <el-form-item label="开始时间">
+            <el-form-item :label="t('video.startTime')">
               <el-input v-model="cutStart" placeholder="00:00:00" />
             </el-form-item>
-            <el-form-item label="结束时间">
+            <el-form-item :label="t('video.endTime')">
               <el-input v-model="cutEnd" placeholder="00:00:10" />
             </el-form-item>
-            <el-form-item label="模式">
+            <el-form-item :label="t('video.mode')">
               <el-radio-group v-model="cutMode">
-                <el-radio value="fast">快速（不重新编码）</el-radio>
-                <el-radio value="accurate">精确（重新编码）</el-radio>
+                <el-radio value="fast">{{ t("video.fast") }}</el-radio>
+                <el-radio value="accurate">{{ t("video.accurate") }}</el-radio>
               </el-radio-group>
             </el-form-item>
-            <el-form-item label="输出路径">
+            <el-form-item :label="t('pdf.outputPath')">
               <el-input v-model="cutOutput" placeholder="例如: D:/cut.mp4" />
             </el-form-item>
           </el-form>
           <el-button type="primary" :disabled="!cutFile || !cutOutput" @click="cutVideo">
-            剪切
+            {{ t("video.cutVideo") }}
           </el-button>
         </section>
       </el-tab-pane>
 
-      <el-tab-pane label="转码" name="transcode">
+      <el-tab-pane :label="t('video.transcode')" name="transcode">
         <section class="section">
           <div class="drop-zone" @click="selectTranscodeFile">
-            <p>{{ transcodeFile ? transcodeFile.split(/[/\\]/).pop() : "点击选择视频文件" }}</p>
+            <p>{{ transcodeFile ? transcodeFile.split(/[/\\]/).pop() : t("video.selectVideo") }}</p>
           </div>
           <el-form label-width="100px" class="form-section">
-            <el-form-item label="目标格式">
+            <el-form-item :label="t('video.outputFormat')">
               <el-select v-model="transcodeFormat">
-                <el-option label="H.264 (兼容性最佳)" value="h264" />
-                <el-option label="H.265/HEVC (更小体积)" value="h265" />
-                <el-option label="VP9 (Web 友好)" value="vp9" />
+                <el-option label="H.264" value="h264" />
+                <el-option label="H.265/HEVC" value="h265" />
+                <el-option label="VP9" value="vp9" />
               </el-select>
             </el-form-item>
-            <el-form-item label="质量 (CRF)">
-              <el-slider
-                v-model="transcodeQuality"
-                :min="0"
-                :max="51"
-                show-input
-                style="width: 300px"
-              />
-              <div class="form-hint">越小质量越高，23 是默认值</div>
+            <el-form-item :label="t('video.qualityCRF')">
+              <el-slider v-model="transcodeQuality" :min="0" :max="51" show-input style="width: 300px" />
+              <div class="form-hint">{{ t("video.qualityHint") }}</div>
             </el-form-item>
-            <el-form-item label="输出路径">
+            <el-form-item :label="t('pdf.outputPath')">
               <el-input v-model="transcodeOutput" placeholder="例如: D:/output.mp4" />
             </el-form-item>
           </el-form>
-          <el-button
-            type="primary"
-            :disabled="!transcodeFile || !transcodeOutput"
-            @click="transcodeVideo"
-          >
-            转码
+          <el-button type="primary" :disabled="!transcodeFile || !transcodeOutput" @click="transcodeVideo">
+            {{ t("video.transcodeVideo") }}
           </el-button>
         </section>
       </el-tab-pane>
 
-      <el-tab-pane label="GIF" name="gif">
+      <el-tab-pane :label="t('video.gif')" name="gif">
         <section class="section">
           <div class="drop-zone" @click="selectGifFile">
-            <p>{{ gifFile ? gifFile.split(/[/\\]/).pop() : "点击选择视频文件" }}</p>
+            <p>{{ gifFile ? gifFile.split(/[/\\]/).pop() : t("video.selectVideo") }}</p>
           </div>
           <el-form label-width="100px" class="form-section">
-            <el-form-item label="开始时间">
+            <el-form-item :label="t('video.startTime')">
               <el-input v-model="gifStart" placeholder="00:00:00" />
             </el-form-item>
-            <el-form-item label="时长(秒)">
+            <el-form-item :label="t('video.duration')">
               <el-input-number v-model="gifDuration" :min="1" :max="30" />
             </el-form-item>
-            <el-form-item label="帧率">
+            <el-form-item :label="t('video.fps')">
               <el-input-number v-model="gifFps" :min="5" :max="30" />
             </el-form-item>
-            <el-form-item label="宽度(px)">
+            <el-form-item :label="t('video.width')">
               <el-input-number v-model="gifWidth" :min="100" :max="1920" :step="10" />
             </el-form-item>
-            <el-form-item label="输出路径">
+            <el-form-item :label="t('pdf.outputPath')">
               <el-input v-model="gifOutput" placeholder="例如: D:/output.gif" />
             </el-form-item>
           </el-form>
           <el-button type="primary" :disabled="!gifFile || !gifOutput" @click="videoToGif">
-            生成 GIF
+            {{ t("video.generateGif") }}
           </el-button>
         </section>
       </el-tab-pane>

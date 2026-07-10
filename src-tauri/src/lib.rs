@@ -1,5 +1,7 @@
 mod commands;
 mod common;
+mod pipeline;
+mod worker;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,6 +20,7 @@ pub fn run() {
             pipeline::registry::get_node_types,
             pipeline::registry::get_node_types_grouped,
             pipeline::preview::preview_pipeline,
+            pipeline::executor::run_pipeline,
             worker::cancel_batch,
         ])
         .run(tauri::generate_context!())

@@ -141,7 +141,7 @@ pub fn dry_run(pipeline: &Pipeline, input_files: Vec<String>) -> PreviewResult {
 // 拓扑排序(Kahn 算法)
 // ============================================================
 
-fn topological_sort(pipeline: &Pipeline) -> Result<Vec<String>, String> {
+pub fn topological_sort(pipeline: &Pipeline) -> Result<Vec<String>, String> {
     let mut in_degree: HashMap<&str, usize> = HashMap::new();
     let mut graph: HashMap<&str, Vec<&str>> = HashMap::new();
 

@@ -1,0 +1,63 @@
+/* ============================================
+   FileToolkit 主题变量
+   深色模式通过 html.dark 切换
+   ============================================ */
+
+:root {
+  /* 品牌色 */
+  --ft-primary: #409eff;
+  --ft-primary-light: #66b1ff;
+  --ft-primary-dark: #3a8ee6;
+
+  /* 页面背景 */
+  --ft-bg: #f5f7fa;
+  --ft-bg-card: #ffffff;
+  --ft-border: #e4e7ed;
+
+  /* 侧边栏 */
+  --ft-sidebar-bg: #ffffff;
+  --ft-sidebar-hover: #ecf5ff;
+
+  /* 阴影 */
+  --ft-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --ft-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  /* 圆角 */
+  --ft-radius: 8px;
+  --ft-radius-sm: 6px;
+}
+
+/* 深色主题 */
+html.dark {
+  --ft-primary: #409eff;
+  --ft-primary-light: #337ecc;
+  --ft-primary-dark: #66b1ff;
+
+  --ft-bg: #1a1a2e;
+  --ft-bg-card: #222244;
+  --ft-border: #333355;
+
+  --ft-sidebar-bg: #1e1e3a;
+  --ft-sidebar-hover: #2a2a4a;
+
+  --ft-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ft-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Element Plus 深色覆盖 */
+html.dark {
+  --el-bg-color: var(--ft-bg-card);
+  --el-bg-color-page: var(--ft-bg);
+  --el-bg-color-overlay: var(--ft-bg-card);
+  --el-border-color: var(--ft-border);
+  --el-border-color-light: var(--ft-border);
+  --el-border-color-lighter: var(--ft-border);
+  --el-text-color-primary: #e5eaf3;
+  --el-text-color-regular: #cfd3dc;
+  --el-text-color-secondary: #a3a6ad;
+  --el-text-color-placeholder: #8d9095;
+  --el-fill-color-blank: var(--ft-bg-card);
+  --el-color-primary: var(--ft-primary);
+  --el-color-primary-light-9: rgba(64, 158, 255, 0.1);
+  --el-color-primary-light-5: rgba(64, 158, 255, 0.3);
+}

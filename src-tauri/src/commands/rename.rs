@@ -3,7 +3,7 @@
 // 功能:为文件添加前缀/后缀并按顺序编号
 // 命名规则: {prefix}_{编号}_{suffix}.{原扩展名}
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 /// 重命名结果
@@ -14,46 +14,32 @@ pub struct RenameResult {
     pub fail_list: Vec<String>,
 }
 
-/// 批量重命名文件。
-///
-/// # 参数
-/// - `file_paths`: 要重命名的文件路径列表
-/// - `prefix`: 文件名前缀（可选）
-/// - `start_num`: 起始编号（可选，默认 1）
-/// - `suffix`: 文件名后缀（可选）
-///
-/// # 命名规则
-/// `{prefix}_{编号}_{suffix}.{原扩展名}`
-#[tauri::command]
-pub fn rename_files(
-    file_paths: Vec<String>,
-    prefix: Option<String>,
-    start_num: Option<u32>,
-    suffix: Option<String>,
-) -> RenameResult {
-    let prefix = prefix.unwrap_or_default();
-    let start = start_num.unwrap_or(1);
-    let suffix = suffix.unwrap_or_default();
+/// 核心重命名逻辑 —— 供 Tauri 命令和流水线 executor 共用。
+/// 返回 (成功数量, 新文件路径列表)
+pub fn do_rename(
+    file_paths: &[String],
+    prefix: &str,
+    start_num: u32,
+    suffix: &str,
+    output_dir: Option<&str>,
+) -> Result<Vec<String>, Vec<String>> {
+    let prefix = prefix;
+    let start = start_num;
+    let suffix = suffix;
+    let mut outputs = Vec::new();
     let mut fail_list = Vec::new();
-    let mut success_count = 0u32;
 
     for (i, file_path) in file_paths.iter().enumerate() {
         let original = Path::new(file_path);
-        let parent = match original.parent() {
-            Some(p) => p,
-            None => {
-                fail_list.push(format!("{}: 无法获取父目录", file_path));
-                continue;
-            }
+        let parent = if let Some(od) = output_dir {
+            PathBuf::from(od)
+        } else {
+            original.parent().map(|p| p.to_path_buf()).unwrap_or_default()
         };
 
-        let ext = original
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
-
-        // 构建新文件名: {prefix}_{编号}_{suffix}.ext
+        let ext = original.extension().and_then(|e| e.to_str()).unwrap_or("");
         let num = start + i as u32;
+
         let new_name = match (prefix.is_empty(), suffix.is_empty()) {
             (true, true) => format!("{}.{}", num, ext),
             (true, false) => format!("{}_{}.{}", num, suffix, ext),
@@ -69,31 +55,46 @@ pub fn rename_files(
 
         let new_path = parent.join(&new_name);
 
-        if new_path.exists() {
-            fail_list.push(format!(
-                "{} → {}: 目标已存在",
-                file_path,
-                new_path.display()
-            ));
+        if new_path.exists() && new_path != original {
+            fail_list.push(format!("{} → {}: 目标已存在", file_path, new_path.display()));
             continue;
         }
 
-        match std::fs::rename(original, &new_path) {
-            Ok(()) => success_count += 1,
-            Err(e) => {
-                fail_list.push(format!("{}: {}", file_path, e));
-            }
+        match std::fs::copy(original, &new_path) {
+            Ok(_) => outputs.push(new_path.display().to_string()),
+            Err(e) => fail_list.push(format!("{}: {}", file_path, e)),
         }
     }
 
+    if fail_list.is_empty() { Ok(outputs) } else { Err(fail_list) }
+}
+
+/// Tauri 命令:批量重命名文件
+#[tauri::command]
+pub fn rename_files(
+    file_paths: Vec<String>,
+    prefix: Option<String>,
+    start_num: Option<u32>,
+    suffix: Option<String>,
+) -> RenameResult {
+    let pfx = prefix.unwrap_or_default();
+    let start = start_num.unwrap_or(1);
+    let sfx = suffix.unwrap_or_default();
     let total = file_paths.len();
-    RenameResult {
-        success: fail_list.is_empty(),
-        msg: if fail_list.is_empty() {
-            format!("全部成功: {}/{}", success_count, total)
-        } else {
-            format!("{}/{} 成功, {} 失败", success_count, total, fail_list.len())
+
+    match do_rename(&file_paths, &pfx, start, &sfx, None) {
+        Ok(outputs) => RenameResult {
+            success: true,
+            msg: format!("全部成功: {}/{}", outputs.len(), total),
+            fail_list: vec![],
         },
-        fail_list,
+        Err(fail_list) => {
+            let ok = total.saturating_sub(fail_list.len());
+            RenameResult {
+                success: ok > 0,
+                msg: format!("{}/{} 成功, {} 失败", ok, total, fail_list.len()),
+                fail_list,
+            }
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { ref, watchEffect } from "vue";
 
-type ThemeMode = "light" | "dark" | "system";
+export type ThemeMode = "light" | "dark" | "system";
 
 const STORAGE_KEY = "filetoolkit:theme";
 const themeMode = ref<ThemeMode>(loadTheme());

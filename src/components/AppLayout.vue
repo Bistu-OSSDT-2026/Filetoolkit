@@ -3,7 +3,7 @@ import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { setLocale, availableLocales } from "../i18n";
-import { useTheme, themeOptions } from "../composables/useTheme";
+import { useTheme, themeOptions, type ThemeMode } from "../composables/useTheme";
 import {
   House,
   Picture,
@@ -119,7 +119,7 @@ function toggleSidebar() {
             :model-value="themeMode"
             size="small"
             style="width: 100px"
-            @change="(v) => setTheme(v)"
+            @change="(v: string) => setTheme(v as ThemeMode)"
           >
             <el-option v-for="o in themeOptions" :key="o.value" :label="o.label" :value="o.value" />
           </el-select>

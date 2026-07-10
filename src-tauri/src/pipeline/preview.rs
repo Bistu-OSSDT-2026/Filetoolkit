@@ -141,7 +141,7 @@ pub fn dry_run(pipeline: &Pipeline, input_files: Vec<String>) -> PreviewResult {
 // 拓扑排序(Kahn 算法)
 // ============================================================
 
-fn topological_sort(pipeline: &Pipeline) -> Result<Vec<String>, String> {
+pub fn topological_sort(pipeline: &Pipeline) -> Result<Vec<String>, String> {
     let mut in_degree: HashMap<&str, usize> = HashMap::new();
     let mut graph: HashMap<&str, Vec<&str>> = HashMap::new();
 
@@ -210,38 +210,24 @@ fn predict_outputs(
 
         // ========== PDF ==========
         "pdf_merge" => {
-            let name = params.get("outputName")
-                .and_then(|v| v.as_str())
-                .unwrap_or("merged");
+            let name = params.get("outputName").and_then(|v| v.as_str()).unwrap_or("merged");
             vec![format!("{}.pdf", name)]
         }
         "pdf_split" => {
-            // 按页码范围预测:拆出多个文件
-            let ranges = params.get("ranges")
-                .and_then(|v| v.as_str())
-                .unwrap_or("1");
+            let ranges = params.get("ranges").and_then(|v| v.as_str()).unwrap_or("1");
             let count = ranges.split(',').count();
             (0..count).map(|i| {
                 let base = strip_ext(&inputs[0]);
-                format!("{}_part{}.pdf", base, i + 1)
+                format!("{}_split_{}-{}.pdf", base, i + 1, i + 1)
             }).collect()
         }
-        "pdf_compress" => {
-            inputs.iter().map(|f| add_suffix(f, "_compressed")).collect()
-        }
+        "pdf_compress" => { inputs.to_vec() }
 
         // ========== 重命名 ==========
         "rename" => {
-            let prefix = params.get("prefix")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let start_num = params.get("startNum")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(1) as usize;
-            let suffix = params.get("suffix")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-
+            let prefix = params.get("prefix").and_then(|v| v.as_str()).unwrap_or("");
+            let start_num = params.get("startNum").and_then(|v| v.as_u64()).unwrap_or(1) as usize;
+            let suffix = params.get("suffix").and_then(|v| v.as_str()).unwrap_or("");
             inputs.iter().enumerate().map(|(i, f)| {
                 let ext = get_ext(f);
                 format!("{}{}{}.{}", prefix, start_num + i, suffix, ext)
@@ -250,21 +236,20 @@ fn predict_outputs(
 
         // ========== 视频 ==========
         "video_cut" => {
-            inputs.iter().map(|f| add_suffix(f, "_cut")).collect()
+            let ext = get_ext(&inputs[0]);
+            vec![format!("cut_output.{}", if ext.is_empty() { "mp4".to_string() } else { ext })]
         }
         "video_transcode" => {
-            inputs.iter().map(|f| change_ext(f, "mp4")).collect()
+            vec!["transcode_output.mp4".to_string()]
         }
         "video_to_gif" => {
-            inputs.iter().map(|f| change_ext(f, "gif")).collect()
+            vec!["output.gif".to_string()]
         }
 
         // ========== 音频 ==========
         "extract_audio" | "audio_convert" => {
-            let format = params.get("format")
-                .and_then(|v| v.as_str())
-                .unwrap_or("mp3");
-            inputs.iter().map(|f| change_ext(f, format)).collect()
+            let format = params.get("format").and_then(|v| v.as_str()).unwrap_or("mp3");
+            vec![format!("audio_output.{}", format)]
         }
 
         // ========== 文档 ==========

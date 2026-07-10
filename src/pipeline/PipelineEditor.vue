@@ -9,9 +9,15 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Upload, Download, Check, RefreshLeft, Files } from "@element-plus/icons-vue";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
+import {
+  Delete, Upload, Download, Check, RefreshLeft, Files,
+  VideoPlay, View, FolderOpened,
+} from "@element-plus/icons-vue";
 import NodePanel from "./NodePanel.vue";
 import NodeParamForm from "./NodeParamForm.vue";
 import TemplateManager from "./TemplateManager.vue";
@@ -24,6 +30,109 @@ const { onConnect, onNodeClick, onPaneClick, screenToFlowCoordinate } = useVueFl
 const pipeline = new PipelineState();
 const showValidationErrors = ref(false);
 const showTemplateDialog = ref(false);
+
+// ====== 执行状态 ======
+const inputFiles = ref<string[]>([]);
+const outputDir = ref("");
+const executing = ref(false);
+const previewing = ref(false);
+const execProgress = ref("");
+const execCurrentStep = ref(0);
+const execTotalSteps = ref(0);
+const showPreview = ref(false);
+const previewData = ref<any>(null);
+let unlistenPipeline: UnlistenFn | null = null;
+
+/** 是否在 Tauri 环境（只有桌面应用才能执行流水线） */
+const isTauri = !!(window as any).__TAURI_INTERNALS__;
+
+/** 选择输入文件 */
+async function selectInputFiles() {
+  if (!isTauri) { ElMessage.warning("请在桌面应用中操作"); return; }
+  try {
+    const selected = await open({ multiple: true });
+    if (!selected) return;
+    inputFiles.value = Array.isArray(selected) ? selected : [selected];
+  } catch (e) {
+    ElMessage.error("选择文件失败: " + String(e));
+  }
+}
+
+/** 选择输出目录 */
+async function selectOutputDir() {
+  if (!isTauri) { ElMessage.warning("请在桌面应用中操作"); return; }
+  try {
+    const selected = await open({ directory: true });
+    if (!selected) return;
+    outputDir.value = typeof selected === "string" ? selected : selected[0];
+  } catch (e) {
+    ElMessage.error("选择目录失败: " + String(e));
+  }
+}
+
+/** 预览（dry-run） */
+async function handlePreview() {
+  if (!isTauri) { ElMessage.warning("流水线执行需在桌面应用中操作"); return; }
+  const json = pipeline.toPipelineJSON();
+  if (!json.nodes.length) { ElMessage.warning("请先添加节点"); return; }
+
+  previewing.value = true;
+  try {
+    const result = await invoke<any>("preview_pipeline", {
+      pipelineJson: JSON.stringify(json),
+      inputFiles: inputFiles.value,
+    });
+    previewData.value = result;
+    showPreview.value = true;
+  } catch (e) {
+    ElMessage.error(String(e));
+  } finally {
+    previewing.value = false;
+  }
+}
+
+/** 执行流水线 */
+async function handleExecute() {
+  if (!isTauri) { ElMessage.warning("流水线执行需在桌面应用中操作"); return; }
+  if (!outputDir.value) { ElMessage.warning("请选择输出目录"); return; }
+  const json = pipeline.toPipelineJSON();
+  if (!json.nodes.length) { ElMessage.warning("请先添加节点"); return; }
+
+  executing.value = true;
+  execProgress.value = "正在准备执行...";
+
+  try {
+    unlistenPipeline = await listen<any>("pipeline-progress", (event) => {
+      const p = event.payload;
+      execCurrentStep.value = p.currentStep;
+      execTotalSteps.value = p.totalSteps;
+      execProgress.value = `${p.currentNodeLabel || ""} (${p.currentStep}/${p.totalSteps})`;
+    });
+  } catch { /* ignore in browser */ }
+
+  try {
+    const result = await invoke<any>("run_pipeline", {
+      pipelineJson: JSON.stringify(json),
+      inputFiles: inputFiles.value,
+      outputDir: outputDir.value,
+    });
+    if (result.success) {
+      ElMessage.success("流水线执行完成");
+    } else {
+      ElMessage.error("执行失败: " + (result.steps?.find((s: any) => !s.success)?.error || "未知错误"));
+    }
+  } catch (e) {
+    ElMessage.error(String(e));
+  } finally {
+    executing.value = false;
+    if (unlistenPipeline) { unlistenPipeline(); unlistenPipeline = null; }
+  }
+}
+
+function handleCancel() {
+  invoke("cancel_batch").catch(() => {});
+  executing.value = false;
+}
 
 /** .flow-canvas 的 DOM 引用，用于注册原生事件监听 */
 const flowCanvasRef = ref<HTMLElement | null>(null);
@@ -116,7 +225,7 @@ async function handleExport() {
   const defaultName = `${pipeline.pipelineName.value || "pipeline"}.json`;
 
   // 检测是否在 Tauri 环境（有原生对话框可用）
-  if (window.__TAURI_INTERNALS__) {
+  if ((window as any).__TAURI_INTERNALS__) {
     try {
       const filePath = await save({
         defaultPath: defaultName,
@@ -225,6 +334,37 @@ onUnmounted(() => {
           </el-button>
         </div>
       </div>
+      <!-- 执行控制栏 -->
+      <div class="execution-bar">
+        <div class="exec-left">
+          <el-tag v-if="inputFiles.length" size="small" type="info">
+            {{ inputFiles.length }} 个输入文件
+          </el-tag>
+          <el-button size="small" :disabled="!isTauri" @click="selectInputFiles">
+            <el-icon><Upload /></el-icon>输入文件
+          </el-button>
+          <el-tag v-if="outputDir" size="small" type="info" class="dir-tag">
+            {{ outputDir }}
+          </el-tag>
+          <el-button size="small" :disabled="!isTauri" @click="selectOutputDir">
+            <el-icon><FolderOpened /></el-icon>输出目录
+          </el-button>
+        </div>
+        <div class="exec-right">
+          <el-button size="small" :loading="previewing" :disabled="!isTauri" @click="handlePreview">
+            <el-icon><View /></el-icon>预览
+          </el-button>
+          <el-button size="small" type="primary" :loading="executing" :disabled="!isTauri || !outputDir" @click="handleExecute">
+            <el-icon><VideoPlay /></el-icon>执行
+          </el-button>
+          <el-button v-if="executing" size="small" type="warning" @click="handleCancel">取消</el-button>
+        </div>
+      </div>
+      <!-- 执行/预览进度 -->
+      <div v-if="executing" class="exec-progress">
+        <el-progress :percentage="execTotalSteps > 0 ? Math.round(execCurrentStep / execTotalSteps * 100) : undefined" :indeterminate="execTotalSteps === 0" />
+        <span class="progress-text">{{ execProgress || "执行中..." }}</span>
+      </div>
       <el-alert
         v-if="showValidationErrors && pipeline.validationErrors.value.length > 0"
         type="error"
@@ -279,6 +419,34 @@ onUnmounted(() => {
           handleImport();
         "
       />
+    </el-dialog>
+    <!-- 预览弹窗 -->
+    <el-dialog v-model="showPreview" title="执行预览 (Dry-run)" width="560px" destroy-on-close>
+      <div v-if="previewData">
+        <el-alert v-if="previewData.hasCycle" type="error" title="流水线中存在环路，无法执行" :closable="false" />
+        <el-alert v-else-if="previewData.error" type="warning" :title="previewData.error" :closable="false" />
+        <div v-else>
+          <p style="margin-bottom: 12px; color: var(--el-text-color-secondary)">
+            执行顺序: {{ (previewData.executionOrder || []).join(" → ") }}
+          </p>
+          <div v-for="(step, i) in previewData.steps || []" :key="i" class="preview-step">
+            <h4>
+              <el-tag size="small" type="primary">{{ i + 1 }}</el-tag>
+              {{ step.nodeLabel || step.nodeId }}
+            </h4>
+            <p v-if="step.inputFrom">输入来源: {{ step.inputFrom }}</p>
+            <p v-if="step.inputFiles?.length">
+              → {{ step.inputFiles.length }} 输入 → {{ step.outputFiles?.length || 0 }} 输出
+            </p>
+            <div v-if="step.outputFiles?.length" class="preview-outputs">
+              <span v-for="f in step.outputFiles.slice(0, 5)" :key="f" class="preview-file">
+                {{ f.split(/[/\\]/).pop() }}
+              </span>
+              <span v-if="step.outputFiles.length > 5">...等 {{ step.outputFiles.length }} 个</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -337,5 +505,77 @@ onUnmounted(() => {
 .flow-canvas :deep(.vue-flow__node.selected) {
   box-shadow: 0 0 0 2px var(--el-color-primary);
   border-radius: 6px;
+}
+
+/* -- 执行控制栏 -- */
+.execution-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  flex-shrink: 0;
+}
+.exec-left, .exec-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dir-tag {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -- 执行进度 -- */
+.exec-progress {
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--el-color-primary-light-9);
+}
+.exec-progress .el-progress {
+  flex: 1;
+}
+.progress-text {
+  font-size: 12px;
+  color: var(--el-color-primary);
+  white-space: nowrap;
+}
+
+/* -- 预览 -- */
+.preview-step {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.preview-step h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preview-step p {
+  margin: 2px 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.preview-outputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.preview-file {
+  font-size: 11px;
+  padding: 1px 6px;
+  background: var(--el-color-success-light-9);
+  border-radius: 3px;
+  color: var(--el-color-success);
 }
 </style>

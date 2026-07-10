@@ -1,0 +1,72 @@
+/* ============================================
+   FileToolkit Element Plus 组件覆盖
+   深色模式下微调组件样式，确保视觉统一
+   ============================================ */
+
+/* 表格 / 列表行 hover */
+html.dark .el-table__body tr:hover > td {
+  background-color: rgba(64, 158, 255, 0.08) !important;
+}
+
+/* 标签(Tag)深色适配 */
+html.dark .el-tag--success {
+  --el-tag-bg-color: rgba(103, 194, 58, 0.15);
+  --el-tag-text-color: #67c23a;
+  --el-tag-border-color: rgba(103, 194, 58, 0.3);
+}
+html.dark .el-tag--warning {
+  --el-tag-bg-color: rgba(230, 162, 60, 0.15);
+  --el-tag-text-color: #e6a23c;
+}
+html.dark .el-tag--danger {
+  --el-tag-bg-color: rgba(245, 108, 108, 0.15);
+  --el-tag-text-color: #f56c6c;
+}
+html.dark .el-tag--info {
+  --el-tag-bg-color: rgba(144, 147, 153, 0.15);
+  --el-tag-text-color: #909399;
+}
+
+/* Alert 深色适配 */
+html.dark .el-alert--success {
+  --el-alert-bg-color: rgba(103, 194, 58, 0.1);
+}
+html.dark .el-alert--warning {
+  --el-alert-bg-color: rgba(230, 162, 60, 0.1);
+}
+html.dark .el-alert--error {
+  --el-alert-bg-color: rgba(245, 108, 108, 0.1);
+}
+
+/* Dialog 深色背景 */
+html.dark .el-dialog {
+  --el-dialog-bg-color: var(--ft-bg-card);
+}
+html.dark .el-message-box {
+  --el-messagebox-bg-color: var(--ft-bg-card);
+}
+
+/* 输入框 / 选择框 深色边框增强 */
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner,
+html.dark .el-select .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+}
+html.dark .el-input__wrapper:hover,
+html.dark .el-select:hover .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+}
+
+/* 单选框 / 复选框 */
+html.dark .el-radio__inner,
+html.dark .el-checkbox__inner {
+  border-color: var(--el-border-color);
+}
+
+/* Tabs 深色 */
+html.dark .el-tabs__item {
+  color: var(--el-text-color-secondary);
+}
+html.dark .el-tabs__item.is-active {
+  color: var(--el-color-primary);
+}

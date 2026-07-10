@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import type { Node, Edge, Connection } from "@vue-flow/core";
+import type { Connection } from "@vue-flow/core";
 import type { Pipeline, NodeType, ParamDef } from "../pipeline/types";
 
 /** 硬编码的节点类型注册表（前期不与后端通信，后续可改为 invoke("get_node_types")） */
@@ -83,7 +83,7 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
     params: [],
   },
   {
-    id: "file_rename",
+    id: "rename",
     name: "批量重命名",
     category: "文件",
     description: "使用模板变量批量重命名文件",
@@ -92,17 +92,31 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
     outputs: [{ id: "output", label: "重命名后文件", portType: "file[]" }],
     params: [
       {
-        key: "pattern",
-        label: "命名模板",
+        key: "prefix",
+        label: "前缀",
         paramType: "string",
-        default: "{name}-{index:3}",
+        default: "",
+        help: "文件名前缀，如 photo_（可留空）",
+      },
+      {
+        key: "startNum",
+        label: "起始编号",
+        paramType: "number",
+        default: 1,
         required: true,
-        help: "支持 {name} {ext} {date} {index:3} 等变量",
+        help: "编号起始数字",
+      },
+      {
+        key: "suffix",
+        label: "后缀",
+        paramType: "string",
+        default: "",
+        help: "文件名后缀（可留空）",
       },
     ],
   },
   {
-    id: "file_dedup",
+    id: "dedup",
     name: "重复查重",
     category: "文件",
     description: "按哈希值查找并删除重复文件",
@@ -124,7 +138,7 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
     ],
   },
   {
-    id: "file_archive",
+    id: "archive_compress",
     name: "文件打包",
     category: "文件",
     description: "将文件打包为 zip/7z/tar.gz",
@@ -144,10 +158,11 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
         ],
       },
       {
-        key: "archiveName",
-        label: "压缩包名称",
+        key: "password",
+        label: "密码（可选）",
         paramType: "string",
-        default: "archive",
+        default: "",
+        help: "留空则不加密",
       },
     ],
   },
@@ -161,26 +176,29 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
     outputs: [{ id: "output", label: "转码后视频", portType: "file[]" }],
     params: [
       {
-        key: "format",
-        label: "输出格式",
-        paramType: "select",
-        default: "mp4",
-        options: [
-          { value: "mp4", label: "MP4" },
-          { value: "mov", label: "MOV" },
-          { value: "mkv", label: "MKV" },
-          { value: "webm", label: "WebM" },
-        ],
-      },
-      {
-        key: "codec",
-        label: "编码",
+        key: "videoCodec",
+        label: "视频编码",
         paramType: "select",
         default: "h264",
         options: [
           { value: "h264", label: "H.264" },
-          { value: "h265", label: "H.265" },
+          { value: "h265", label: "H.265/HEVC" },
+          { value: "vp9", label: "VP9" },
         ],
+      },
+      {
+        key: "crf",
+        label: "质量 (CRF)",
+        paramType: { slider: { min: 0, max: 51, step: 1 } },
+        default: 23,
+        help: "越小质量越高，推荐 18-28",
+      },
+      {
+        key: "encoder",
+        label: "硬件编码器",
+        paramType: "string",
+        default: "",
+        help: "留空自动选择，如 h264_nvenc",
       },
     ],
   },
@@ -208,6 +226,16 @@ const BUILTIN_NODE_TYPES: NodeType[] = [
         default: "00:01:00",
         required: true,
         help: "格式 HH:MM:SS",
+      },
+      {
+        key: "mode",
+        label: "剪切模式",
+        paramType: "select",
+        default: "fast",
+        options: [
+          { value: "fast", label: "快速 (-c copy)" },
+          { value: "accurate", label: "精确 (重编码)" },
+        ],
       },
     ],
   },
@@ -238,36 +266,37 @@ export function findNodeType(id: string): NodeType | undefined {
  */
 export class PipelineState {
   /** 画布节点 —— 通过 :nodes 单向传给 VueFlow */
-  flowNodes = ref<Node[]>([]);
+  flowNodes = ref<any[]>([]);
   /** 画布连线 —— 通过 :edges 单向传给 VueFlow */
-  flowEdges = ref<Edge[]>([]);
+  flowEdges = ref<any[]>([]);
 
   pipelineName = ref("未命名流水线");
   pipelineDescription = ref("");
   selectedNodeId = ref<string | null>(null);
   validationErrors = ref<string[]>([]);
 
-  get nodes(): Node[] {
+  // Getters — type as any[] to avoid TS2589 deep instantiation with VueFlow Node type
+  get nodes(): any[] {
     return this.flowNodes.value;
   }
 
-  get edges(): Edge[] {
+  get edges(): any[] {
     return this.flowEdges.value;
   }
 
   /** VueFlow 用户拖拽节点后，通过 @update:nodes 回调进来 */
-  acceptFlowNodes(val: Node[]) {
+  acceptFlowNodes(val: any[]) {
     this.flowNodes.value = val;
   }
 
   /** VueFlow 用户修改连线后，通过 @update:edges 回调进来 */
-  acceptFlowEdges(val: Edge[]) {
+  acceptFlowEdges(val: any[]) {
     this.flowEdges.value = val;
   }
 
-  getSelectedNode(): Node | null {
+  getSelectedNode(): any {
     if (!this.selectedNodeId.value) return null;
-    return this.nodes.find((n) => n.id === this.selectedNodeId.value) ?? null;
+    return this.nodes.find((n: any) => n.id === this.selectedNodeId.value) ?? null;
   }
 
   getSelectedNodeType(): NodeType | null {

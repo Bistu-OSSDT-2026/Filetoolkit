@@ -23,7 +23,7 @@ export const i18n = createI18n({
 });
 
 export function setLocale(locale: string) {
-  i18n.global.locale.value = locale;
+  (i18n.global.locale as any).value = locale;
   try {
     localStorage.setItem(STORAGE_KEY, locale);
   } catch {

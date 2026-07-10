@@ -224,63 +224,44 @@ pub fn merge_pdfs(
 // 命令:拆分 PDF
 // ============================================================
 
-/// 按页码范围拆分 PDF。
-///
-/// - `file`: 输入 PDF 文件路径
-/// - `ranges`: 页码范围数组,如 ["1-3", "4-6", "7-"]
-/// - `output_dir`: 输出目录
-///
-/// 返回生成的 PDF 文件路径列表。
+/// 核心拆分逻辑 —— 供 Tauri 命令和流水线 executor 共用。
+pub fn do_split_pdf(file: &str, ranges: &[String], output_dir: &str) -> Result<Vec<String>, String> {
+    if ranges.is_empty() {
+        return Err("页码范围不能为空".into());
+    }
+    std::fs::create_dir_all(output_dir)
+        .map_err(|e| format!("创建输出目录失败: {}", e))?;
+
+    let source_doc = Document::load(file)
+        .map_err(|e| format!("加载 PDF 失败: {}", e))?;
+    let total_pages = source_doc.get_pages().len() as u32;
+    let mut outputs = Vec::new();
+
+    for range_str in ranges {
+        let (start, end) = parse_range(range_str, total_pages)?;
+        let mut doc = Document::load(file)
+            .map_err(|e| format!("加载 PDF 失败: {}", e))?;
+        let page_numbers: Vec<u32> = doc.get_pages().keys().copied().collect();
+        let to_delete: Vec<u32> = page_numbers.iter()
+            .filter(|&&p| p < start || p > end).copied().collect();
+        if !to_delete.is_empty() { doc.delete_pages(&to_delete); }
+        let end_label = if end == total_pages { "end".to_string() } else { end.to_string() };
+        let output_name = format!("split_{}-{}.pdf", start, end_label);
+        let output_path = PathBuf::from(output_dir).join(&output_name);
+        doc.save(&output_path).map_err(|e| format!("保存 PDF 失败: {}", e))?;
+        outputs.push(output_path.to_string_lossy().to_string());
+    }
+    Ok(outputs)
+}
+
+/// 按页码范围拆分 PDF（Tauri 命令）。
 #[tauri::command]
 pub fn split_pdf(
     file: String,
     ranges: Vec<String>,
     output_dir: String,
 ) -> Result<Vec<String>, String> {
-    if ranges.is_empty() {
-        return Err("页码范围不能为空".into());
-    }
-
-    std::fs::create_dir_all(&output_dir)
-        .map_err(|e| format!("创建输出目录失败: {}", e))?;
-
-    let source_doc = Document::load(&file)
-        .map_err(|e| format!("加载 PDF 失败: {}", e))?;
-    let total_pages = source_doc.get_pages().len() as u32;
-
-    let mut outputs = Vec::new();
-
-    for range_str in &ranges {
-        let (start, end) = parse_range(range_str, total_pages)?;
-
-        // 重新加载(避免克隆大文档)
-        let mut doc = Document::load(&file)
-            .map_err(|e| format!("加载 PDF 失败: {}", e))?;
-
-        let page_numbers: Vec<u32> = doc.get_pages().keys().copied().collect();
-
-        // 删除不在范围内的页面
-        let to_delete: Vec<u32> = page_numbers.iter()
-            .filter(|&&p| p < start || p > end)
-            .copied()
-            .collect();
-
-        if !to_delete.is_empty() {
-            doc.delete_pages(&to_delete);
-        }
-
-        // 输出文件名
-        let end_label = if end == total_pages { "end".to_string() } else { end.to_string() };
-        let output_name = format!("split_{}-{}.pdf", start, end_label);
-        let output_path = PathBuf::from(&output_dir).join(&output_name);
-
-        doc.save(&output_path)
-            .map_err(|e| format!("保存 PDF 失败: {}", e))?;
-
-        outputs.push(output_path.to_string_lossy().to_string());
-    }
-
-    Ok(outputs)
+    do_split_pdf(&file, &ranges, &output_dir)
 }
 
 // ============================================================

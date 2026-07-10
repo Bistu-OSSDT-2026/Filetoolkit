@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -7,11 +7,14 @@ import { ElMessage } from "element-plus";
 
 const { t } = useI18n();
 
-// ====== ffmpeg 检测 ======
+// ====== ffmpeg 检测（按需，不阻塞页面加载）======
 const ffmpegOk = ref(true);
 const ffmpegMsg = ref("");
+const ffmpegChecked = ref(false);
 
-onMounted(async () => {
+async function checkFfmpeg() {
+  if (ffmpegChecked.value) return;
+  ffmpegChecked.value = true;
   try {
     const ver = await invoke<string>("check_ffmpeg");
     ffmpegMsg.value = ver;
@@ -19,7 +22,7 @@ onMounted(async () => {
     ffmpegOk.value = false;
     ffmpegMsg.value = String(e);
   }
-});
+}
 
 const inputFile = ref("");
 const audioFormat = ref("mp3");
@@ -27,6 +30,8 @@ const audioBitrate = ref("192k");
 const outputPath = ref("");
 
 async function selectFile() {
+  await checkFfmpeg();
+  if (!ffmpegOk.value) return;
   const selected = await open({
     filters: [
       { name: "Video/Audio", extensions: ["mp4", "mov", "mkv", "webm", "avi", "mp3", "wav", "flac", "ogg", "aac", "m4a"] },

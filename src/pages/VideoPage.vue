@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -9,13 +9,15 @@ const { t } = useI18n();
 
 const activeTab = ref("cut");
 
-// ====== ffmpeg 检测 ======
+// ====== ffmpeg 检测（完全按需，不阻塞页面加载）======
 const ffmpegOk = ref(true);
 const ffmpegMsg = ref("");
 const gpuEncoders = ref<string[]>([]);
-const gpuChecked = ref(false);
+const ffmpegChecked = ref(false);
 
-onMounted(async () => {
+async function checkFfmpeg() {
+  if (ffmpegChecked.value) return;
+  ffmpegChecked.value = true;
   try {
     const ver = await invoke<string>("check_ffmpeg");
     ffmpegMsg.value = ver;
@@ -23,12 +25,12 @@ onMounted(async () => {
     ffmpegOk.value = false;
     ffmpegMsg.value = String(e);
   }
-  // GPU 检测改为按需（ffmpeg -encoders 很慢，不阻塞页面加载）
-});
+}
 
 async function detectGpu() {
-  if (gpuChecked.value) return;
-  gpuChecked.value = true;
+  if (gpuEncoders.value.length > 0) return;
+  await checkFfmpeg();
+  if (!ffmpegOk.value) return;
   try {
     const encoders = await invoke<any[]>("detect_gpu_encoders");
     gpuEncoders.value = encoders.map((e) => `${e.name} (${e.codec})`);
@@ -43,6 +45,8 @@ const cutOutput = ref("");
 const cutMode = ref("fast");
 
 async function selectCutFile() {
+  await checkFfmpeg();
+  if (!ffmpegOk.value) return;
   const selected = await open({
     filters: [{ name: "Video", extensions: ["mp4", "mov", "mkv", "webm", "avi"] }],
   });
@@ -152,7 +156,7 @@ async function videoToGif() {
     </el-alert>
     <div v-if="ffmpegOk && ffmpegMsg" class="ffmpeg-info">
       <el-tag type="success" size="small">{{ ffmpegMsg }}</el-tag>
-      <el-button v-if="!gpuChecked" size="small" text type="primary" @click="detectGpu" style="margin-left:8px">
+      <el-button v-if="!ffmpegChecked" size="small" text type="primary" @click="detectGpu" style="margin-left:8px">
         检测 GPU 编码器
       </el-button>
     </div>

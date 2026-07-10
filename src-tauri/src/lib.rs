@@ -1,10 +1,5 @@
-// 应用库入口:声明各功能模块,并组装 Tauri 应用。
-// 模块职责详见 docs/design/m0-skeleton.md §3。
-
-mod common;
 mod commands;
-mod pipeline;
-mod worker;
+mod common;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

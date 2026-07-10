@@ -13,6 +13,7 @@ const activeTab = ref("cut");
 const ffmpegOk = ref(true);
 const ffmpegMsg = ref("");
 const gpuEncoders = ref<string[]>([]);
+const gpuChecked = ref(false);
 
 onMounted(async () => {
   try {
@@ -22,11 +23,17 @@ onMounted(async () => {
     ffmpegOk.value = false;
     ffmpegMsg.value = String(e);
   }
+  // GPU 检测改为按需（ffmpeg -encoders 很慢，不阻塞页面加载）
+});
+
+async function detectGpu() {
+  if (gpuChecked.value) return;
+  gpuChecked.value = true;
   try {
     const encoders = await invoke<any[]>("detect_gpu_encoders");
     gpuEncoders.value = encoders.map((e) => `${e.name} (${e.codec})`);
   } catch {}
-});
+}
 
 // ====== 剪切 ======
 const cutFile = ref("");
@@ -145,6 +152,9 @@ async function videoToGif() {
     </el-alert>
     <div v-if="ffmpegOk && ffmpegMsg" class="ffmpeg-info">
       <el-tag type="success" size="small">{{ ffmpegMsg }}</el-tag>
+      <el-button v-if="!gpuChecked" size="small" text type="primary" @click="detectGpu" style="margin-left:8px">
+        检测 GPU 编码器
+      </el-button>
     </div>
     <div v-if="gpuEncoders.length > 0" class="gpu-info">
       <el-tag v-for="enc in gpuEncoders" :key="enc" type="success" size="small">{{ enc }}</el-tag>

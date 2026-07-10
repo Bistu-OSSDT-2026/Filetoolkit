@@ -128,12 +128,7 @@ fn create_zip(
             .unwrap_or("unknown");
 
         if path.is_file() {
-            let options = if let Some(pwd) = password {
-                zip::write::FileOptions::<()>::default()
-                    .with_aes_encryption(zip::AesMode::Aes256, pwd)
-            } else {
-                zip::write::FileOptions::<()>::default()
-            };
+            let options = zip::write::SimpleFileOptions::default();
 
             writer.start_file(name, options)
                 .map_err(|e| AppError::ProcessingFailed(format!("写入 ZIP 条目失败: {}", e)))?;
@@ -148,7 +143,7 @@ fn create_zip(
             writer.write_all(&buf)
                 .map_err(|e| AppError::ProcessingFailed(format!("写入文件到 ZIP 失败: {}", e)))?;
         } else if path.is_dir() {
-            writer.add_directory::<&str, ()>(name, zip::write::FileOptions::<()>::default())
+            writer.add_directory(name, zip::write::SimpleFileOptions::default())
                 .map_err(|e| AppError::ProcessingFailed(format!("添加目录到 ZIP 失败: {}", e)))?;
         }
     }

@@ -3,8 +3,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::command;
 
-// 引用同级common公共工具
-use crate::common::dependency::check_tesseract_installed;
+use crate::common::dependency;
 
 /// OCR返回结果结构体
 #[derive(Debug, serde::Serialize)]
@@ -25,7 +24,7 @@ pub async fn ocr_pdf(
     output: String,
 ) -> OcrResult {
     // 第一步：检测OCR工具是否安装
-    if !check_tesseract_installed().await {
+    if dependency::require_dependency("tesseract").is_err() {
         return OcrResult {
             success: false,
             msg: "未检测到Tesseract识别工具，请先安装依赖".to_string(),
